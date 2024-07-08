@@ -2,6 +2,7 @@ import { Howl, Howler } from "howler";
 import { songScrobble } from "@/api/song";
 import { musicStore } from "@/store";
 import { NIcon } from "naive-ui";
+import { getAlbum } from "../api/album";
 import { MusicNoteFilled } from "@vicons/material";
 import getLanguageData from "./getLanguageData";
 
@@ -11,6 +12,7 @@ let timeupdateInterval = null;
 let scrobbleTimeout = null;
 // 重试次数
 let testNumber = 0;
+
 
 /**
  * 创建音频对象
@@ -57,6 +59,13 @@ export const createSound = (src, autoPlay = true) => {
       }
       // 取消加载状态
       music.isLoadingSong = false;
+      window.music = music
+      // 若无 picUrl
+      //if (music.getPlaySongData.album.picUrl == undefined) {
+      //  getAlbum(music.getPlaySongData.album.id).then((res) => {
+      //    music.getPlaySongData.album.picUrl = res.album.picUrl
+      //  })
+      //}
       // 听歌打卡
       if (isLogin) {
         clearTimeout(scrobbleTimeout);
@@ -229,6 +238,11 @@ const setMediaSession = (music) => {
     Object.keys(music.getPlaySongData).length
   ) {
     const artists = music.getPlaySongData.artist.map((a) => a.name);
+    if (music.getPlaySongData.album.picUrl == undefined) {
+      getAlbum(music.getPlaySongData.album.id).then((res) => {
+        music.getPlaySongData.album.picUrl = res.album.picUrl
+      })
+    }
     navigator.mediaSession.metadata = new MediaMetadata({
       title: music.getPlaySongData.name,
       artist: artists.join(" & "),

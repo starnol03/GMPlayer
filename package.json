@@ -19,6 +19,7 @@
     "pinia": "^2.0.26",
     "pinia-plugin-persistedstate": "^3.0.1",
     "plyr": "^3.7.3",
+    "pnpm": "^9.5.0",
     "qrcode.vue": "^3.3.3",
     "sass": "^1.56.1",
     "screenfull": "^6.0.2",

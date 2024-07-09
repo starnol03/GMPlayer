@@ -19,7 +19,9 @@
 <script setup>
 import { getArtistSongs } from "@/api/artist";
 import { useRouter } from "vue-router";
+import { getAlbum } from '@/api/album'
 import { getSongTime } from "@/utils/timeTools";
+import { ref, toRaw } from 'vue';
 import DataLists from "@/components/DataList/DataLists.vue";
 const router = useRouter();
 
@@ -32,19 +34,36 @@ const getArtistSongsData = (id) => {
   getArtistSongs(id).then((res) => {
     console.log(res);
     artistData.value = [];
+
     res.hotSongs.forEach((v, i) => {
-      artistData.value.push({
-        id: v.id,
-        num: i + 1,
-        name: v.name,
-        artist: v.ar,
-        album: v.al,
-        alia: v.alia,
-        time: getSongTime(v.dt),
-        fee: v.fee,
-        pc: v.pc ? v.pc : null,
-        mv: v.mv ? v.mv : null,
-      });
+
+      const songId = v.al.id
+      const album = ref([])
+      // hmm...multiple request, that sucks
+      getAlbum(songId).then((res) => {
+        res = res.album
+        album.value.push({
+          id: res.id,
+          pic: res.pic,
+          name: res.name,
+          picUrl: res.picUrl,
+          pic_str: res.picId_str
+        });
+        
+        artistData.value.push({
+          id: v.id,
+          num: i + 1,
+          name: v.name,
+          artist: v.ar,
+          album: toRaw(album.value)[0],
+          alia: v.alia,
+          time: getSongTime(v.dt),
+          fee: v.fee,
+          pc: v.pc ? v.pc : null,
+          mv: v.mv ? v.mv : null,
+        });
+      })
+      console.log(artistData)
     });
   });
 };

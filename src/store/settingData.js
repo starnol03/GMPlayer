@@ -44,13 +44,18 @@ const useSettingDataStore = defineStore("settingData", {
       // 歌词模糊
       lyricsBlur: false,
       // 音乐频谱
-      musicFrequency: false,
+      musicFrequency: true,
       // 鼠标移入歌词区域暂停滚动
       lrcMousePause: false,
       // 是否使用网易云解灰
       useUnmServer: true,
       // 播放背景是否显示图片
       backgroundImageShow: "blur",
+      // 流动背景设置
+      fps: 30,
+      flowSpeed: 2,
+      renderScale: 0.5,
+      albumImageUrl: "none",
       // 是否显示前奏等待
       countDownShow: true,
       // 是否显示歌词设置

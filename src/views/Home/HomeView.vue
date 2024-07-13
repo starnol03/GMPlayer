@@ -38,6 +38,7 @@ import PaDailySongs from "@/components/Personalized/PaDailySongs.vue";
 import PaPersonalFm from "@/components/Personalized/PaPersonalFm.vue";
 import PaRadar from "@/components/Personalized/PaRadar.vue";
 import PaLikeSongs from "@/components/Personalized/PaLikeSongs.vue";
+import BackgroundRender from "../../libs/apple-music-like/BackgroundRender.vue";
 
 const setting = settingStore();
 

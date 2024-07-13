@@ -5,26 +5,56 @@
         {{ $t("setting.playerStyle") }}
         <span class="tip">{{ $t("setting.playerStyleTip") }}</span>
       </div>
-      <n-select
-        class="set"
-        v-model:value="playerStyle"
-        :options="playerStyleOptions"
-      />
+      <n-select class="set" v-model:value="playerStyle" :options="playerStyleOptions" />
     </n-card>
     <n-card class="set-item">
       <div class="name">
         {{ $t("setting.backgroundImageShow") }}
         <span class="tip">{{
-          backgroundImageShow === "blur"
-            ? $t("setting.backgroundImageShowTip1")
-            : $t("setting.backgroundImageShowTip2")
-        }}</span>
+          $t(`setting.backgroundImageShowTip_${backgroundImageShow}`)
+          }}</span>
       </div>
-      <n-select
-        class="set"
-        v-model:value="backgroundImageShow"
-        :options="backgroundImageShowOptions"
-      />
+      <n-select class="set" v-model:value="backgroundImageShow" :options="backgroundImageShowOptions" />
+    </n-card>
+    <n-card v-if="backgroundImageShow === 'eplor'" class="set-item">
+      <div class="name">
+        {{ $t("setting.eploryBackgroundConfig") }}
+        <span class="tip">{{
+          $t(`setting.eploryBackgroundConfigTip`)
+          }}</span>
+      </div>
+      <n-button class="set" @click="isModalOn = true">配置</n-button>
+      <n-modal preset="dialog" :title="t('setting.eploryBackgroundConfig')" v-model:show="isModalOn">
+        <n-form style="margin-top: 1rem;">
+          <n-form-item :label="t('setting.eplorySetting.fps.title')">
+            <n-input-number :min="0.1" v-model:value="fps" />
+            <template #feedback>
+              {{ t('setting.eplorySetting.fps.tip') }}
+            </template>
+          </n-form-item>
+          <br />
+          <n-form-item :label="t('setting.eplorySetting.flowSpeed.title')">
+            <n-input-number :min="0.1" v-model:value="flowSpeed" />
+            <template #feedback>
+              {{ t('setting.eplorySetting.flowSpeed.tip') }}
+            </template>
+          </n-form-item>
+          <br />
+          <n-form-item :label="t('setting.eplorySetting.renderScale.title')">
+            <n-input-number :min="0.1" v-model:value="renderScale" />
+            <template #feedback>
+              {{ t('setting.eplorySetting.renderScale.tip') }}
+            </template>
+          </n-form-item>
+          <br />
+          <n-form-item :label="t('setting.eplorySetting.albumImageUrl.title')">
+            <n-input v-model:value="albumImageUrl" />
+            <template #feedback>
+              {{ t('setting.eplorySetting.albumImageUrl.tip') }}
+            </template>
+          </n-form-item>
+        </n-form>
+      </n-modal>
     </n-card>
     <n-card class="set-item">
       <div class="name">
@@ -90,60 +120,35 @@
         {{ $t("setting.lyricsBlock") }}
         <span class="tip">{{ $t("setting.lyricsBlockTip") }}</span>
       </div>
-      <n-select
-        class="set"
-        v-model:value="lyricsBlock"
-        :options="lyricsBlockOptions"
-      />
+      <n-select class="set" v-model:value="lyricsBlock" :options="lyricsBlockOptions" />
     </n-card>
-    <n-card
-      class="set-item"
-      :content-style="{
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-      }"
-    >
+    <n-card class="set-item" :content-style="{
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+    }">
       <div class="name">{{ $t("setting.lyricsFontSize") }}</div>
-      <n-slider
-        v-model:value="lyricsFontSize"
-        :tooltip="false"
-        :max="4"
-        :min="3"
-        :step="0.01"
-        :marks="{
-          3: t('setting.lyrics1'),
-          3.6: t('setting.lyrics2'),
-          4: t('setting.lyrics3'),
-        }"
-      />
+      <n-slider v-model:value="lyricsFontSize" :tooltip="false" :max="4" :min="3" :step="0.01" :marks="{
+        3: t('setting.lyrics1'),
+        3.6: t('setting.lyrics2'),
+        4: t('setting.lyrics3'),
+      }" />
       <div :class="lyricsBlur ? 'more blur' : 'more'">
-        <div
-          v-for="n in 3"
-          :key="n"
-          :class="n === 2 ? 'lrc on' : 'lrc'"
-          :style="{
-            margin: n === 2 ? '12px 0' : null,
-            alignItems: lyricsPosition == 'center' ? 'center' : null,
-            transformOrigin:
-              lyricsPosition == 'center' ? 'center' : 'center left',
-          }"
-        >
-          <span :style="{ fontSize: lyricsFontSize + 'vh' }"
-            >这是一句歌词
+        <div v-for="n in 3" :key="n" :class="n === 2 ? 'lrc on' : 'lrc'" :style="{
+          margin: n === 2 ? '12px 0' : null,
+          alignItems: lyricsPosition == 'center' ? 'center' : null,
+          transformOrigin:
+            lyricsPosition == 'center' ? 'center' : 'center left',
+        }">
+          <span :style="{ fontSize: lyricsFontSize + 'vh' }">这是一句歌词
           </span>
-          <span :style="{ fontSize: lyricsFontSize - 0.4 + 'vh' }"
-            >This is a lyric
+          <span :style="{ fontSize: lyricsFontSize - 0.4 + 'vh' }">This is a lyric
           </span>
         </div>
       </div>
     </n-card>
     <n-card class="set-item">
       <div class="name">{{ $t("setting.lyricsPosition") }}</div>
-      <n-select
-        class="set"
-        v-model:value="lyricsPosition"
-        :options="lyricsPositionOptions"
-      />
+      <n-select class="set" v-model:value="lyricsPosition" :options="lyricsPositionOptions" />
     </n-card>
     <n-card class="set-item">
       <div class="name">
@@ -179,7 +184,10 @@ const {
   showTransl,
   lyricsPosition,
   playerStyle,
-  musicFrequency,
+  fps,
+  flowSpeed,
+  renderScale,
+  albumImageUrl,
   lyricsFontSize,
   lyricsBlock,
   lyricsBlur,
@@ -191,6 +199,8 @@ const {
   showYrcAnimation,
   showYrcTransform,
 } = storeToRefs(setting);
+console.log('SETTING', fps)
+const isModalOn = ref(false)
 
 // 歌词位置
 const lyricsPositionOptions = [
@@ -237,6 +247,10 @@ const backgroundImageShowOptions = [
   {
     label: t("setting.blur"),
     value: "blur",
+  },
+  {
+    label: t("setting.eplor"),
+    value: "eplor",
   },
 ];
 

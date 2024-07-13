@@ -4,25 +4,13 @@
       <n-layout-header bordered>
         <Nav />
       </n-layout-header>
-      <n-layout-content
-        position="absolute"
-        :class="music.getPlaylists[0] && music.showPlayBar ? 'show' : ''"
-        :native-scrollbar="false"
-        embedded
-      >
-        <main
-          ref="mainContent"
-          class="main"
-          id="mainContent"
-          :class="{
-            playlist: music.showPlayList,
-            search: site.searchInputActive,
-          }"
-        >
-          <n-back-top
-            :bottom="music.getPlaylists[0] && music.showPlayBar ? 100 : 40"
-            style="transition: all 0.3s"
-          />
+      <n-layout-content position="absolute" :class="music.getPlaylists[0] && music.showPlayBar ? 'show' : ''"
+        :native-scrollbar="false" embedded>
+        <main ref="mainContent" class="main" id="mainContent" :class="{
+          playlist: music.showPlayList,
+          search: site.searchInputActive,
+        }">
+          <n-back-top :bottom="music.getPlaylists[0] && music.showPlayBar ? 100 : 40" style="transition: all 0.3s" />
           <router-view v-slot="{ Component }">
             <keep-alive>
               <Transition name="scale" mode="out-in">
@@ -235,20 +223,35 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
 }
+
+.main-content {
+  transition: transform .3s, opacity .3s;
+
+  .bigplayer-on {
+    opacity: 0;
+    transform: scale(.9);
+  }
+}
+
 .n-layout-content {
   top: 60px;
   transition: all 0.3s;
+
   &.show {
     bottom: 70px;
   }
+
   :deep(.n-scrollbar-rail--vertical) {
     right: 0;
   }
+
   .main {
     max-width: 1400px;
     margin: 0 auto;
+
     div:nth-of-type(2) {
       transition: all 0.3s;
+
       &::after {
         content: "";
         position: absolute;
@@ -261,11 +264,13 @@ onMounted(() => {
         z-index: 2;
       }
     }
+
     &.playlist {
       div:nth-of-type(2) {
         transform: scale(0.98);
       }
     }
+
     &.search {
       div:nth-of-type(2) {
         &::after {

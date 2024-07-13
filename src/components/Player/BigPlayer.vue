@@ -1,55 +1,36 @@
 <template>
   <Transition name="up">
-    <div
-      v-if="music.showBigPlayer"
-      class="bplayer"
-      :style="[
-        music.getPlaySongData && setting.backgroundImageShow === 'blur'
-          ? 'background-image: url(' +
-            music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
-            '?param=50y50)'
-          : '',
-        `backgroundColor: ${site.songPicColor}`,
-      ]"
-    >
-      <div
-        :class="setting.backgroundImageShow === 'blur' ? 'gray blur' : 'gray'"
-      />
+    <div v-if="music.showBigPlayer" class="bplayer" :style="[
+      music.getPlaySongData && setting.backgroundImageShow === 'blur' && setting.backgroundImageShow !== 'eplor' ? 'background-image: url(' +
+        music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
+        '?param=50y50)'
+        : '',
+      `backgroundColor: ${site.songPicColor}`,
+    ]">
+      <BackgroundRender v-if="setting.backgroundImageShow === 'eplor'" :playing="true" :fps="setting.fps"
+        :flowSpeed="setting.flowSpeed"
+        :album="setting.albumImageUrl === 'none' ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') : setting.albumImageUrl"
+        :renderScale="setting.renderScale" style="position: absolute; top: 0; left:0; width: 100%; height: 100%;" />
+      <div :class="setting.backgroundImageShow === 'blur' ? 'gray blur' : 'gray'" />
       <div class="icon-menu">
         <div class="menu-left">
           <div v-if="setting.showLyricSetting" class="icon">
-            <n-icon
-              class="setting"
-              size="30"
-              :component="SettingsRound"
-              @click="LyricSettingRef.openLyricSetting()"
-            />
+            <n-icon class="setting" size="30" :component="SettingsRound" @click="LyricSettingRef.openLyricSetting()" />
           </div>
         </div>
         <div class="menu-right">
           <div class="icon">
-            <n-icon
-              class="screenfull"
-              :component="screenfullIcon"
-              @click="screenfullChange"
-            />
+            <n-icon class="screenfull" :component="screenfullIcon" @click="screenfullChange" />
           </div>
           <div class="icon">
-            <n-icon
-              class="close"
-              :component="KeyboardArrowDownFilled"
-              @click="music.setBigPlayerState(false)"
-            />
+            <n-icon class="close" :component="KeyboardArrowDownFilled" @click="music.setBigPlayerState(false)" />
           </div>
         </div>
       </div>
-      <div
-        :class="
-          music.getPlaySongLyric.lrc[0] && music.getPlaySongLyric.lrc.length > 4
-            ? 'all'
-            : 'all noLrc'
-        "
-      >
+      <div :class="music.getPlaySongLyric.lrc[0] && music.getPlaySongLyric.lrc.length > 4
+        ? 'all'
+        : 'all noLrc'
+        ">
         <!-- 提示文本 -->
         <Transition name="lrc">
           <div class="tip" v-show="lrcMouseStatus">
@@ -60,19 +41,12 @@
           <PlayerCover v-if="setting.playerStyle === 'cover'" />
           <PlayerRecord v-else />
         </div>
-        <div
-          class="right"
-          @mouseenter="menuShow = true"
-          @mouseleave="menuShow = false"
-        >
+        <div class="right" @mouseenter="menuShow = true" @mouseleave="menuShow = false">
           <Transition name="lrc">
-            <div
-              class="lrcShow"
-              v-if="
-                music.getPlaySongLyric.lrc[0] &&
-                music.getPlaySongLyric.lrc.length > 4
-              "
-            >
+            <div class="lrcShow" v-if="
+              music.getPlaySongLyric.lrc[0] &&
+              music.getPlaySongLyric.lrc.length > 4
+            ">
               <div class="data" v-show="setting.playerStyle === 'record'">
                 <div class="name text-hidden">
                   <span>{{
@@ -80,57 +54,30 @@
                       ? music.getPlaySongData.name
                       : $t("other.noSong")
                   }}</span>
-                  <span
-                    v-if="music.getPlaySongData && music.getPlaySongData.alia"
-                    >{{ music.getPlaySongData.alia[0] }}</span
-                  >
+                  <span v-if="music.getPlaySongData && music.getPlaySongData.alia">{{ music.getPlaySongData.alia[0]
+                    }}</span>
                 </div>
-                <div
-                  class="artists text-hidden"
-                  v-if="music.getPlaySongData && music.getPlaySongData.artist"
-                >
-                  <span
-                    class="artist"
-                    v-for="(item, index) in music.getPlaySongData.artist"
-                    :key="item"
-                  >
+                <div class="artists text-hidden" v-if="music.getPlaySongData && music.getPlaySongData.artist">
+                  <span class="artist" v-for="(item, index) in music.getPlaySongData.artist" :key="item">
                     <span>{{ item.name }}</span>
-                    <span
-                      v-if="index != music.getPlaySongData.artist.length - 1"
-                      >/</span
-                    >
+                    <span v-if="index != music.getPlaySongData.artist.length - 1">/</span>
                   </span>
                 </div>
               </div>
-              <RollingLyrics
-                @mouseenter="
-                  lrcMouseStatus = setting.lrcMousePause ? true : false
-                "
-                @mouseleave="lrcAllLeave"
-                @lrcTextClick="lrcTextClick"
-              />
-              <div
-                :class="menuShow ? 'menu show' : 'menu'"
-                v-show="setting.playerStyle === 'record'"
-              >
-                <n-icon
-                  v-if="music.getPlaySongTransl"
-                  :class="setting.showTransl ? 'open' : ''"
-                  :component="GTranslateFilled"
-                  @click="setting.setShowTransl(!setting.showTransl)"
-                />
-                <n-icon
-                  class="open"
-                  :component="MessageFilled"
-                  @click="toComment"
-                />
+              <RollingLyrics @mouseenter="
+                lrcMouseStatus = setting.lrcMousePause ? true : false
+                " @mouseleave="lrcAllLeave" @lrcTextClick="lrcTextClick" />
+              <div :class="menuShow ? 'menu show' : 'menu'" v-show="setting.playerStyle === 'record'">
+                <n-icon v-if="music.getPlaySongTransl" :class="setting.showTransl ? 'open' : ''"
+                  :component="GTranslateFilled" @click="setting.setShowTransl(!setting.showTransl)" />
+                <n-icon class="open" :component="MessageFilled" @click="toComment" />
               </div>
             </div>
           </Transition>
         </div>
       </div>
       <!-- 音乐频谱 -->
-      <!-- <Spectrum v-if="setting.musicFrequency" /> -->
+      <Spectrum />
       <!-- 歌词设置 -->
       <LyricSetting ref="LyricSettingRef" />
     </div>
@@ -152,9 +99,10 @@ import { setSeek } from "@/utils/Player";
 import PlayerRecord from "./PlayerRecord.vue";
 import PlayerCover from "./PlayerCover.vue";
 import RollingLyrics from "./RollingLyrics.vue";
-// import Spectrum from "./Spectrum.vue";
+import Spectrum from "./Spectrum.vue";
 import LyricSetting from "@/components/DataModal/LyricSetting.vue";
 import screenfull from "screenfull";
+import BackgroundRender from "@/libs/apple-music-like/BackgroundRender.vue";
 
 const router = useRouter();
 const music = musicStore();
@@ -289,21 +237,26 @@ watch(
   transform: translateY(0);
   transition: all 0.5s cubic-bezier(0.65, 0.05, 0.36, 1);
 }
+
 .up-enter-from,
 .up-leave-to {
   transform: translateY(100%);
 }
+
 .lrc-enter-active,
 .lrc-leave-active {
   transition: opacity 0.3s ease;
 }
+
 .lrc-enter-active {
   transition-delay: 0.3s;
 }
+
 .lrc-enter-from,
 .lrc-leave-to {
   opacity: 0;
 }
+
 .bplayer {
   position: fixed;
   top: 0;
@@ -318,6 +271,7 @@ watch(
   background-position: center;
   display: flex;
   justify-content: center;
+
   &::after {
     // content: "";
     position: absolute;
@@ -327,6 +281,7 @@ watch(
     width: 4px;
     background-color: red;
   }
+
   .gray {
     position: absolute;
     top: 0;
@@ -337,10 +292,12 @@ watch(
     -webkit-backdrop-filter: blur(80px);
     backdrop-filter: blur(80px);
     z-index: -1;
+
     &.blur {
       background-color: #00000060;
     }
   }
+
   .icon-menu {
     padding: 20px;
     width: 100%;
@@ -353,10 +310,12 @@ watch(
     justify-content: space-between;
     z-index: 2;
     box-sizing: border-box;
+
     .menu-left,
     .menu-right {
       display: flex;
       align-items: center;
+
       .icon {
         width: 40px;
         height: 40px;
@@ -368,14 +327,17 @@ watch(
         border-radius: 8px;
         transition: all 0.3s;
         cursor: pointer;
+
         &:hover {
           background-color: #ffffff20;
           transform: scale(1.05);
           opacity: 1;
         }
+
         &:active {
           transform: scale(1);
         }
+
         .screenfull,
         .setting {
           @media (max-width: 768px) {
@@ -384,12 +346,14 @@ watch(
         }
       }
     }
+
     .menu-right {
       .icon {
         margin-left: 12px;
       }
     }
   }
+
   .all {
     width: 100%;
     height: 100%;
@@ -398,17 +362,21 @@ watch(
     align-items: center;
     transition: all 0.3s ease-in-out;
     position: relative;
+
     &.noLrc {
       .left {
         padding-right: 0;
         transform: translateX(25vh);
+
         @media (max-width: 1200px) {
           transform: translateX(22.2vh);
         }
+
         @media (min-width: 769px) and (max-width: 869px) {
           transform: translateX(20.1vh);
         }
       }
+
       @media (max-width: 768px) {
         .left {
           width: 100%;
@@ -416,23 +384,28 @@ watch(
           transform: none;
           align-items: center;
         }
+
         .right {
           display: none !important;
         }
       }
     }
+
     @media (max-width: 768px) {
       .left {
         display: none !important;
       }
+
       .right {
         padding: 0 2vw;
+
         .lrcShow {
           .lrc-all {
             height: 70vh !important;
             // padding-right: 16% !important;
             margin-right: 0 !important;
           }
+
           .data,
           .menu {
             display: block !important;
@@ -441,6 +414,7 @@ watch(
         }
       }
     }
+
     .tip {
       position: absolute;
       top: 24px;
@@ -454,10 +428,12 @@ watch(
       display: flex;
       align-items: center;
       justify-content: center;
+
       span {
         color: #ffffffc7;
       }
     }
+
     .left {
       // flex: 1;
       // padding: 0 4vw;
@@ -470,22 +446,28 @@ watch(
       padding-right: 3.8vw;
       box-sizing: border-box;
     }
+
     .right {
       flex: 1;
       height: 100%;
       padding-left: 2vw;
+
       .lrcShow {
         height: 100%;
         display: flex;
         justify-content: center;
         flex-direction: column;
+
         .data {
           padding: 0 3vh;
           margin-bottom: 8px;
+
           .name {
             font-size: 3vh;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             padding-right: 26px;
+
             span {
               &:nth-of-type(2) {
                 margin-left: 12px;
@@ -494,10 +476,12 @@ watch(
               }
             }
           }
+
           .artists {
             margin-top: 4px;
             opacity: 0.6;
             font-size: 1.8vh;
+
             .artist {
               span {
                 &:nth-of-type(2) {
@@ -507,6 +491,7 @@ watch(
             }
           }
         }
+
         .menu {
           opacity: 0;
           padding: 0 3vh;
@@ -515,9 +500,11 @@ watch(
           flex-direction: row;
           align-items: center;
           transition: all 0.3s;
+
           &.show {
             opacity: 1;
           }
+
           .n-icon {
             margin-right: 8px;
             font-size: 24px;
@@ -526,12 +513,15 @@ watch(
             border-radius: 8px;
             opacity: 0.4;
             transition: all 0.3s;
+
             &:hover {
               background-color: #ffffff30;
             }
+
             &:active {
               transform: scale(0.95);
             }
+
             &.open {
               opacity: 1;
             }
@@ -540,6 +530,7 @@ watch(
       }
     }
   }
+
   .canvas {
     display: flex;
     justify-content: center;
@@ -548,24 +539,21 @@ watch(
     z-index: -1;
     position: absolute;
     bottom: 0;
-    -webkit-mask: linear-gradient(
-      to right,
-      hsla(0deg, 0%, 100%, 0) 0,
-      hsla(0deg, 0%, 100%, 0.6) 15%,
-      #fff 30%,
-      #fff 70%,
-      hsla(0deg, 0%, 100%, 0.6) 85%,
-      hsla(0deg, 0%, 100%, 0)
-    );
-    mask: linear-gradient(
-      to right,
-      hsla(0deg, 0%, 100%, 0) 0,
-      hsla(0deg, 0%, 100%, 0.6) 15%,
-      #fff 30%,
-      #fff 70%,
-      hsla(0deg, 0%, 100%, 0.6) 85%,
-      hsla(0deg, 0%, 100%, 0)
-    );
+    -webkit-mask: linear-gradient(to right,
+        hsla(0deg, 0%, 100%, 0) 0,
+        hsla(0deg, 0%, 100%, 0.6) 15%,
+        #fff 30%,
+        #fff 70%,
+        hsla(0deg, 0%, 100%, 0.6) 85%,
+        hsla(0deg, 0%, 100%, 0));
+    mask: linear-gradient(to right,
+        hsla(0deg, 0%, 100%, 0) 0,
+        hsla(0deg, 0%, 100%, 0.6) 15%,
+        #fff 30%,
+        #fff 70%,
+        hsla(0deg, 0%, 100%, 0.6) 85%,
+        hsla(0deg, 0%, 100%, 0));
+
     .avBars {
       max-width: 1600px;
       opacity: 0.6;

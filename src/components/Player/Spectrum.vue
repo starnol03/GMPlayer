@@ -10,6 +10,8 @@ import { musicStore } from "@/store";
 const music = musicStore();
 const canvasRef = ref(null);
 
+console.log(music.spectrumsData)
+
 const drawSpectrum = (data) => {
   canvasRef.value.width =
     document.body.clientWidth >= 1600 ? 1600 : document.body.clientWidth;

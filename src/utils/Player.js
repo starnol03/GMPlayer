@@ -150,7 +150,7 @@ export const createSound = (src, autoPlay = true) => {
       music.setPlayState(false);
     });
     // 生成频谱
-    if (settings.musicFrequency || setting.dynamicFlowSpeed) processSpectrum(sound);
+    if (settings.musicFrequency || settings.dynamicFlowSpeed) processSpectrum(sound);
     // 返回音频对象
     return (window.$player = sound);
   } catch (err) {

@@ -1,9 +1,9 @@
 {
-  "name": "splayer",
-  "version": "1.1.9",
-  "author": "imsyy",
+  "name": "GMPlayer",
+  "version": "2.0",
+  "author": "GBCLStudio",
   "home": "https://imsyy.top",
-  "github": "https://github.com/imsyy/SPlayer",
+  "github": "https://github.com/Burial0268/SPlayer",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",

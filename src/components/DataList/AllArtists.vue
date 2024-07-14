@@ -43,7 +43,7 @@ const props = defineProps({
 
 // 跳转歌手页面
 const jumpArtist = (id) => {
-  console.log(id);
+  console.log('歌手ID',id);
   music.setBigPlayerState(false);
   router.push({
     path: "/artist/songs",

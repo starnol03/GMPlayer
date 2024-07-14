@@ -24,7 +24,7 @@
           }}</span>
       </div>
       <n-button class="set" @click="isModalOn = true">配置</n-button>
-      <n-modal preset="dialog" :title="t('setting.eploryBackgroundConfig')" v-model:show="isModalOn">
+      <n-modal class="s-modal" preset="dialog" :title="t('setting.eploryBackgroundConfig')" v-model:show="isModalOn">
         <n-form style="margin-top: 1rem;">
           <n-form-item :label="t('setting.eplorySetting.fps.title')">
             <n-input-number :min="0.1" v-model:value="fps" />
@@ -33,8 +33,24 @@
             </template>
           </n-form-item>
           <br />
+          <n-form-item label="启用动态流速">
+            <n-switch v-model:value="dynamicFlowSpeed" />
+            <template #feedback>
+              启用动态流速，滚动背景会根据音乐当前的烈度来调整流速，以实现更加灵动的显示效果。同时，普通的流速设置将被禁用。
+              <br /><br />
+              使用该功能则将伴随启用音乐 FFT 分析，这会导致较大的性能损耗，请根据设备能力选择。
+            </template>
+          </n-form-item>
+          <br />
+          <n-form-item label="动态流速倍率">
+            <n-input-number :min="0.1" v-model:value="dynamicFlowSpeedScale" :disabled="!dynamicFlowSpeed" />
+            <template #feedback>
+              调节动态流速的乘算倍率，倍率越高，随音频烈度的而产生的流速变化会越明显，性能消耗也会越大，默认为 50。
+            </template>
+          </n-form-item>
+          <br />
           <n-form-item :label="t('setting.eplorySetting.flowSpeed.title')">
-            <n-input-number :min="0.1" v-model:value="flowSpeed" />
+            <n-input-number :min="0.1" v-model:value="flowSpeed" :disabled="dynamicFlowSpeed" />
             <template #feedback>
               {{ t('setting.eplorySetting.flowSpeed.tip') }}
             </template>
@@ -157,17 +173,13 @@
       </div>
       <n-switch v-model:value="lyricsBlur" :round="false" />
     </n-card>
-    <!-- <n-card class="set-item">
+    <n-card class="set-item">
       <div class="name">
         显示音乐频谱
-        <span class="tip">可能会导致一些意想不到的后果，实验性功能</span>
+        <span class="tip">可能会消耗性能</span>
       </div>
-      <n-switch
-        v-model:value="musicFrequency"
-        :round="false"
-        @click="changeMusicFrequency"
-      />
-    </n-card> -->
+      <n-switch v-model:value="musicFrequency" :round="false" />
+    </n-card>
   </div>
 </template>
 
@@ -186,8 +198,11 @@ const {
   playerStyle,
   fps,
   flowSpeed,
+  musicFrequency,
   renderScale,
   albumImageUrl,
+  dynamicFlowSpeed,
+  dynamicFlowSpeedScale,
   lyricsFontSize,
   lyricsBlock,
   lyricsBlur,
@@ -253,26 +268,4 @@ const backgroundImageShowOptions = [
     value: "eplor",
   },
 ];
-
-// 音乐频谱提醒
-// const changeMusicFrequency = () => {
-//   if (musicFrequency.value) {
-//     $dialog.warning({
-//       class: "s-dialog",
-//       title: "实验性功能",
-//       content: "确认开启音乐频谱？将在重启应用后生效",
-//       positiveText: "开启",
-//       negativeText: "取消",
-//       onMaskClick: () => {
-//         musicFrequency.value = false;
-//       },
-//       onPositiveClick: () => {
-//         musicFrequency.value = true;
-//       },
-//       onNegativeClick: () => {
-//         musicFrequency.value = false;
-//       },
-//     });
-//   }
-// };
 </script>

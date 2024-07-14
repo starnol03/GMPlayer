@@ -232,7 +232,7 @@ const volumeMute = () => {
           font-size: 23px;
           font-weight: bold;
           -webkit-line-clamp: 2;
-
+          line-clamp: 2;
           @media (max-width: 1200px) {
             font-size: 20px;
           }

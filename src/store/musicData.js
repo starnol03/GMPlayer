@@ -41,12 +41,8 @@ const useMusicDataStore = defineStore("musicData", {
       // 精品歌单分类
       highqualityCatList: [],
       // 音乐频谱数据
-      spectrumsData: {
-        data: [],
-        audio: null,
-        analyser: null,
-        audioCtx: null,
-      },
+      spectrumsData: [],
+      spectrumsScaleData: 1,
       // 是否正在加载数据
       isLoadingSong: false,
       // 持久化数据
@@ -103,6 +99,10 @@ const useMusicDataStore = defineStore("musicData", {
     // 获取播放列表
     getPlaylists(state) {
       return state.persistData.playlists;
+    },
+    // 获取频谱数据
+    getSpectrumsData(state) {
+      return state.spectrumsData
     },
     // 获取播放模式
     getPlaySongMode(state) {

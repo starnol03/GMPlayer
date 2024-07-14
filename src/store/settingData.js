@@ -44,7 +44,7 @@ const useSettingDataStore = defineStore("settingData", {
       // 歌词模糊
       lyricsBlur: false,
       // 音乐频谱
-      musicFrequency: true,
+      musicFrequency: false,
       // 鼠标移入歌词区域暂停滚动
       lrcMousePause: false,
       // 是否使用网易云解灰
@@ -56,6 +56,9 @@ const useSettingDataStore = defineStore("settingData", {
       flowSpeed: 2,
       renderScale: 0.5,
       albumImageUrl: "none",
+      // 动态背景设置
+      dynamicFlowSpeed: false,
+      dynamicFlowSpeedScale: 50,
       // 是否显示前奏等待
       countDownShow: true,
       // 是否显示歌词设置

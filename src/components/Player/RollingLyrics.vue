@@ -65,7 +65,7 @@
           }">
             <span class="word" v-html="v.content.replace(/ /g, '&nbsp;')" />
             <span class="filler" :class="{
-              long: i === item.content.length - 1 && v.duration > 1,
+              long: v.content.trim().length >= 1 && v.content.trim().length <= 7 && v.duration > 1,
               animation: setting.showYrcAnimation,
               paused: !music.playState,
             }" v-html="v.content.replace(/ /g, '&nbsp;')" />
@@ -88,12 +88,15 @@
 </template>
 
 <script setup>
+// TODO: 辉光效果
 import { musicStore, settingStore } from "@/store";
 import CountDown from "./CountDown.vue";
 
 const music = musicStore();
 const setting = settingStore();
 const reg = /^\[\d{2}:\d{2}\.\d{3}\]$/
+
+console.log('歌词数据', music.getPlaySongLyric)
 
 // 发送方法
 const emit = defineEmits(["lrcTextClick"]);
@@ -135,6 +138,23 @@ const lrcTextClick = (time) => {
 
   100% {
     opacity: 0.3;
+  }
+}
+
+@keyframes emp {
+  0% {
+    opacity: 0.5;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 28px rgba(255, 255, 255, 0.9);
+  }
+
+  100% {
+    opacity: 0.5;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
   }
 }
 
@@ -221,7 +241,7 @@ const lrcTextClick = (time) => {
             opacity: 1 !important;
 
             &.long {
-              animation: shine calc(var(--dur) * 1.2) cubic-bezier(0.25, 0.1, 0.25, 1);
+              animation: progress, emp calc(var(--dur) * 1.2) cubic-bezier(0.23, 1, 0.32, 1) forwards !important;
             }
 
             &.animation {

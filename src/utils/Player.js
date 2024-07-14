@@ -1,6 +1,6 @@
 import { Howl, Howler } from "howler";
 import { songScrobble } from "@/api/song";
-import { musicStore } from "@/store";
+import { musicStore,settingStore } from "@/store";
 import { NIcon } from "naive-ui";
 import { MusicNoteFilled } from "@vicons/material";
 import getLanguageData from "./getLanguageData";
@@ -11,7 +11,13 @@ let timeupdateInterval = null;
 let scrobbleTimeout = null;
 // 重试次数
 let testNumber = 0;
-
+// 频谱数据
+let spectrumsData = {
+  audio: null,
+  analyser: null,
+  audioCtx: null,
+  scale: 1,
+};
 
 /**
  * 创建音频对象
@@ -24,6 +30,7 @@ export const createSound = (src, autoPlay = true) => {
   try {
     Howler.unload();
     const music = musicStore();
+    const settings = settingStore()
     const sound = new Howl({
       src: [src],
       format: ["mp3", "flac"],
@@ -143,7 +150,7 @@ export const createSound = (src, autoPlay = true) => {
       music.setPlayState(false);
     });
     // 生成频谱
-    // createSpectrums(sound, music);
+    if (settings.musicFrequency || setting.dynamicFlowSpeed) processSpectrum(sound);
     // 返回音频对象
     return (window.$player = sound);
   } catch (err) {
@@ -277,35 +284,41 @@ const setMediaSession = (music) => {
 };
 
 /**
- * 生成频谱数据 - 快速傅里叶变换（FFT）
- * @param {Howl} sound - 音频对象
- * @param {music} music - pinia
+ * 生成频谱数据 - 快速傅里叶变换（ FFT ）
+ * @param {Object} sound - Howler.js 的音频对象
+ * @returns {void}
  */
-const createSpectrums = (sound, music) => {
+export const processSpectrum = (sound) => {
+  console.log('processSpectrum')
   try {
-    if (!music.spectrumsData.audioCtx) {
+    if (!spectrumsData.audioCtx) {
       // 断开之前的连接
-      music.spectrumsData.audio?.disconnect();
-      music.spectrumsData.analyser?.disconnect();
-      music.spectrumsData.audioCtx?.close();
+      spectrumsData.audio?.disconnect();
+      spectrumsData.analyser?.disconnect();
+      spectrumsData.audioCtx?.close();
       // 创建新的连接
-      music.spectrumsData.audioCtx = new (window.AudioContext ||
-        window.webkitAudioContext)();
+      spectrumsData.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      // 获取音频元素
       const audioDom = sound._sounds[0]._node;
+      // 允许跨域请求
       audioDom.crossOrigin = "anonymous";
-      const source =
-        music.spectrumsData.audioCtx.createMediaElementSource(audioDom);
-      const analyser = music.spectrumsData.audioCtx.createAnalyser();
-      analyser.fftSize = 256;
+      // 创建音频源和分析器
+      const source = spectrumsData.audioCtx.createMediaElementSource(audioDom);
+      const analyser = spectrumsData.audioCtx.createAnalyser();
+      // 频谱分析器 FFT
+      analyser.fftSize = 512;
+      // 连接音频源和分析器，再连接至音频上下文的目标
       source.connect(analyser);
-      analyser.connect(music.spectrumsData.audioCtx.destination);
+      analyser.connect(spectrumsData.audioCtx.destination);
       // 更新频谱数据
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      updateSpectrums(analyser, dataArray, music);
+
+      updateSpectrums(analyser, dataArray);
       // 保存当前链接
-      music.spectrumsData.audio = source;
-      music.spectrumsData.analyser = analyser;
+      spectrumsData.audio = source;
+      spectrumsData.analyser = analyser;
     }
+    console.log('处理完成音乐频谱')
   } catch (err) {
     console.error("音乐频谱生成失败：" + err);
   }
@@ -313,16 +326,20 @@ const createSpectrums = (sound, music) => {
 
 /**
  * 更新音乐频谱数据
- *
  * @param {Object} analyser - 音频分析器
  * @param {Uint8Array} dataArray - 频谱数据数组
- * @param {Object} music - pinia
  */
-const updateSpectrums = (analyser, dataArray, music) => {
+const updateSpectrums = (analyser, dataArray) => {
+  // pinia
+  const status = musicStore();
+  // 获取频率数据
   analyser.getByteFrequencyData(dataArray);
-  music.spectrumsData.data = [...dataArray];
+  status.spectrumsData = [...dataArray];
+  // 计算 scale
+  const averageAmplitude = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length;
+  status.spectrumsScaleData = (averageAmplitude / 512 + 1).toFixed(2);
   // 递归调用，持续更新频谱数据
   requestAnimationFrame(() => {
-    updateSpectrums(analyser, dataArray, music);
+    updateSpectrums(analyser, dataArray);
   });
 };

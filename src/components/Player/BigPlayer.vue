@@ -41,7 +41,7 @@
           <PlayerCover v-if="setting.playerStyle === 'cover'" />
           <PlayerRecord v-else />
         </div>
-        <div class="right" @mouseenter="menuShow = true" @mouseleave="menuShow = false">
+        <div class="right">
           <Transition name="lrc">
             <div class="lrcShow" v-if="
               music.getPlaySongLyric.lrc[0] &&
@@ -68,9 +68,25 @@
                 lrcMouseStatus = setting.lrcMousePause ? true : false
                 " @mouseleave="lrcAllLeave" @lrcTextClick="lrcTextClick" />
               <div :class="menuShow ? 'menu show' : 'menu'" v-show="setting.playerStyle === 'record'">
-                <n-icon v-if="music.getPlaySongTransl" :class="setting.showTransl ? 'open' : ''"
-                  :component="GTranslateFilled" @click="setting.setShowTransl(!setting.showTransl)" />
-                <n-icon class="open" :component="MessageFilled" @click="toComment" />
+                <div class="time">
+                  <span>{{ music.getPlaySongTime.songTimePlayed }}</span>
+                  <vue-slider v-model="music.getPlaySongTime.barMoveDistance" @drag-start="music.setPlayState(false)"
+                    @drag-end="sliderDragEnd" @click.stop="
+                      songTimeSliderUpdate(music.getPlaySongTime.barMoveDistance)
+                      " :tooltip="'none'" />
+                  <span>{{ music.getPlaySongTime.songTimeDuration }}</span>
+                </div>
+                <div class="control">
+                  <n-icon v-if="!music.getPersonalFmMode" class="prev" size="30" :component="SkipPreviousRound"
+                    @click.stop="music.setPlaySongIndex('prev')" />
+                  <n-icon v-else class="dislike" :component="ThumbDownRound"
+                    @click="music.setFmDislike(music.getPersonalFmData.id)" />
+                  <div class="play-state">
+                    <n-icon :component="music.getPlayState ? PauseCircleFilled : PlayCircleFilled
+                      " @click.stop="music.setPlayState(!music.getPlayState)" />
+                  </div>
+                  <n-icon class="next" :component="SkipNextRound" @click.stop="music.setPlaySongIndex('next')" />
+                </div>
               </div>
             </div>
           </Transition>
@@ -87,13 +103,17 @@
 <script setup>
 import {
   KeyboardArrowDownFilled,
-  GTranslateFilled,
-  MessageFilled,
   FullscreenRound,
   FullscreenExitRound,
   SettingsRound,
+  PlayCircleFilled,
+  PauseCircleFilled,
+  SkipNextRound,
+  SkipPreviousRound,
+  ThumbDownRound,
 } from "@vicons/material";
-import { musicStore, settingStore, siteStore } from "@/store";
+import { PlayCycle, PlayOnce, ShuffleOne } from "@icon-park/vue-next";
+import { musicStore, userStore, settingStore, siteStore } from "@/store";
 import { useRouter } from "vue-router";
 import { setSeek } from "@/utils/Player";
 import PlayerRecord from "./PlayerRecord.vue";
@@ -102,6 +122,8 @@ import RollingLyrics from "./RollingLyrics.vue";
 import Spectrum from "./Spectrum.vue";
 import LyricSetting from "@/components/DataModal/LyricSetting.vue";
 import screenfull from "screenfull";
+import VueSlider from "vue-slider-component";
+import "vue-slider-component/theme/default.css";
 import BackgroundRender from "@/libs/apple-music-like/BackgroundRender.vue";
 import { throttle } from "throttle-debounce";
 import { analyzeAudioIntensity } from "../../utils/fftIntensityAnalyze";
@@ -125,6 +147,18 @@ const lrcTextClick = (time) => {
   if (typeof $player !== "undefined") setSeek($player, time);
   music.setPlayState(true);
   lrcMouseStatus.value = false;
+};
+
+// 歌曲进度条更新
+const sliderDragEnd = () => {
+  songTimeSliderUpdate(music.getPlaySongTime.barMoveDistance);
+  music.setPlayState(true);
+};
+const songTimeSliderUpdate = (val) => {
+  if (typeof $player !== "undefined" && music.getPlaySongTime?.duration) {
+    const currentTime = (music.getPlaySongTime.duration / 100) * val;
+    setSeek($player, currentTime);
+  }
 };
 
 // 鼠标移出歌词区域
@@ -506,12 +540,108 @@ watch(
 
         .menu {
           opacity: 0;
-          padding: 0 3vh;
-          margin-top: 20px;
-          display: flex;
-          flex-direction: row;
+          padding: 1vh 2vh;
+          display: flex !important;
+          justify-content: center;
           align-items: center;
           transition: all 0.3s;
+          flex-direction: column;
+
+          .time {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            margin-right: 3em;
+            margin-left: 3em;
+
+            span {
+              opacity: 0.8;
+            }
+
+            .vue-slider {
+              margin: 0 10px;
+              width: 100% !important;
+              transform: translateY(-1px);
+              cursor: pointer;
+
+              :deep(.vue-slider-rail) {
+                background-color: #ffffff20;
+                border-radius: 25px;
+
+                .vue-slider-process {
+                  background-color: #fff;
+                }
+
+                .vue-slider-dot {
+                  width: 12px !important;
+                  height: 12px !important;
+                  box-shadow: none;
+                }
+
+                .vue-slider-dot-handle-focus {
+                  box-shadow: none;
+                }
+
+                .vue-slider-dot-tooltip-inner {
+                  background-color: white;
+                  backdrop-filter: blur(2px);
+                  border: none
+                }
+
+                .vue-slider-dot-tooltip-text {
+                  color: black;
+                }
+              }
+            }
+          }
+
+          .control {
+            margin-top: 0.8em;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            transform: scale(1.4);
+
+            .next,
+            .prev,
+            .dislike {
+              cursor: pointer;
+              padding: 4px;
+              border-radius: 50%;
+              transform: scale(1);
+              transition: all 0.3s;
+
+              &:hover {
+                background-color: var(--main-color);
+              }
+
+              &:active {
+                transform: scale(0.9);
+              }
+            }
+
+            .dislike {
+              padding: 9px;
+            }
+
+            .play-state {
+              width: 46px;
+              margin: 0 12px;
+              cursor: pointer;
+              transform: scale(1.5);
+              transition: all 0.3s;
+
+              &:hover {
+                transform: scale(1.3);
+              }
+
+              &:active {
+                transform: scale(1);
+              }
+            }
+          }
 
           &.show {
             opacity: 1;
@@ -537,6 +667,7 @@ watch(
             &.open {
               opacity: 1;
             }
+
           }
         }
       }

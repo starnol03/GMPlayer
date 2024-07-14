@@ -51,7 +51,7 @@ const bannerData = ref([]);
 // 请求轮播图数据
 const getBannerData = () => {
   getBanner().then((res) => {
-    console.log(res);
+    console.log('轮播图数据',res);
     bannerData.value = res.banners;
   });
 };

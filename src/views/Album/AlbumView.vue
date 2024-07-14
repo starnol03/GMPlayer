@@ -240,11 +240,13 @@ const getAlbumData = (id) => {
     console.log(res);
     // 专辑信息
     albumDetail.value = res.album;
+    const albumCover = res.album.picUrl;
     $setSiteTitle(res.album.name + " - " + t("general.name.album"));
     // 专辑歌曲
     if (res.songs) {
       albumData.value = [];
       res.songs.forEach((v, i) => {
+        v.al.picUrl = albumCover
         albumData.value.push({
           id: v.id,
           num: i + 1,

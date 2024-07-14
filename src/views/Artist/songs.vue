@@ -63,7 +63,7 @@ const getArtistSongsData = (id) => {
           mv: v.mv ? v.mv : null,
         });
       })
-      console.log(artistData)
+      // console.log(artistData)
     });
   });
 };

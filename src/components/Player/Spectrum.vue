@@ -38,49 +38,55 @@ const isKeepDrawing = ref(true);
  * 绘制音乐频谱图
  * @param {Array} data - 包含音频频谱数据的数组
  */
-const drawSpectrum = (data) => {
-  if (!data) return;
-  if (!isKeepDrawing.value) return;
-  // 去除频谱前5项
-  data = data.slice(5);
-  // 设置画布宽度，最大为 1600
-  canvasRef.value.width = document.body.clientWidth >= 1600 ? 1600 : document.body.clientWidth;
-  // 设置画布高度
-  canvasRef.value.height = props.height;
-  // 获取2D上下文
-  const ctx = canvasRef.value.getContext("2d");
-  // 画布宽高
-  const canvasWidth = canvasRef.value.width;
-  const canvasHeight = canvasRef.value.height;
-  // 频谱数量
+ const drawSpectrum = (data) => {
+  // 提前退出条件：如果未提供数据或不需要继续绘制，则直接返回
+  if (!data || !isKeepDrawing.value) return;
+
+  // 获取画布和其2D上下文
+  const canvas = canvasRef.value;
+  const ctx = canvas.getContext("2d");
+  
+  // 计算画布的宽度，最大为1600或客户端视口宽度的最小值
+  const canvasWidth = Math.min(1600, document.body.clientWidth);
+  // 使用 props 中的高度设置画布高度
+  const canvasHeight = props.height;
+  // 计算需要绘制的柱状图数量
   const numBars = spectrumsData.value.length / 2.5;
-  // 圆角半径
-  const cornerRadius = props.radius;
-  // 柱形宽度
+  // 计算每个柱状图的宽度
   const barWidth = canvasWidth / numBars / 2;
-  // 清除画布
+  // 获取圆角半径，从 props 中获取
+  const cornerRadius = props.radius;
+
+  // 设置画布的宽度和高度
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+
+  // 在绘制前清空画布
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  // 遍历音频频谱数据
+
+  // 设置柱状图的填充颜色
+  ctx.fillStyle = "#efefef";
+
+  // 遍历数据绘制柱状图
   for (let i = 0; i < numBars; i++) {
-    // 计算柱形高度
-    const barHeight = (data[i] / 255) * canvasHeight;
-    // 计算柱形的 x 和 y 坐标
-    const x1 = i * barWidth + canvasWidth / 2;
-    const x2 = canvasWidth / 2 - (i + 1) * barWidth;
-    const y = canvasHeight - barHeight;
-    // 设置柱形颜色，如果未设置则使用默认颜色
-    ctx.fillStyle = "#efefef";
-    // 检查柱形高度是否大于0，避免绘制高度为0的柱形
+    // 计算柱状图的高度，从索引5开始跳过前5项数据
+    const barHeight = (data[i + 5] / 255) * canvasHeight;
+    
+    // 计算柱状图的 x 和 y 坐标
+    const x1 = i * barWidth + canvasWidth / 2; // 右侧柱状图的 x 坐标
+    const x2 = canvasWidth / 2 - (i + 1) * barWidth; // 左侧柱状图的 x 坐标
+    const y = canvasHeight - barHeight; // 柱状图的 y 坐标
+    
+    // 检查柱状图的高度是否大于0，避免绘制不可见的柱状图
     if (barHeight > 0) {
-      // 调用绘制圆角矩形的函数
+      // 绘制圆角矩形
       roundRect(ctx, x1, y, barWidth - 3, barHeight, cornerRadius);
       roundRect(ctx, x2, y, barWidth - 3, barHeight, cornerRadius);
     }
   }
-  // 请求下一帧
-  requestAnimationFrame(() => {
-    drawSpectrum(spectrumsData.value);
-  });
+
+  // 请求下一帧动画，继续绘制
+  requestAnimationFrame(() => drawSpectrum(spectrumsData.value));
 };
 
 /**

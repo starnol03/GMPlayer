@@ -442,6 +442,7 @@ watch(
           font-size: 28px;
           font-weight: bold;
           -webkit-line-clamp: 2;
+          line-clamp: 2;
         }
         .creator {
           margin-top: 6px;
@@ -461,6 +462,7 @@ watch(
         }
         .desc {
           -webkit-line-clamp: 4;
+          line-clamp: 4;
           line-height: 26px;
           margin-bottom: 16px;
         }
@@ -580,6 +582,7 @@ watch(
           }
           .desc {
             -webkit-line-clamp: 3;
+            line-clamp: 3;
             margin-bottom: 0;
           }
         }
@@ -642,6 +645,7 @@ watch(
         .title {
           .name {
             -webkit-line-clamp: 3;
+            line-clamp: 3;
           }
         }
         .control {

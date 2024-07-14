@@ -108,7 +108,6 @@ const roundRect = (ctx, x, y, width, height, radius) => {
 };
 
 onMounted(() => {
-  console.log(spectrumsData.value)
   drawSpectrum(spectrumsData.value);
 });
 

@@ -1,6 +1,6 @@
 <template>
   <div class="cover">
-    <div class="pic">
+    <div :class="['pic', !music.getPlayState ? 'pic-pause' : '']">
       <img class="album" :src="music.getPlaySongData
         ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
         '?param=1024y1024'
@@ -174,6 +174,12 @@ const volumeMute = () => {
     width: 50vh;
     height: 50vh;
     z-index: 1;
+    transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    &-pause {
+      transform: scale(0.9);
+
+    }
 
     // overflow: hidden;
     @media (max-width: 1200px) {
@@ -233,6 +239,7 @@ const volumeMute = () => {
           font-weight: bold;
           -webkit-line-clamp: 2;
           line-clamp: 2;
+
           @media (max-width: 1200px) {
             font-size: 20px;
           }

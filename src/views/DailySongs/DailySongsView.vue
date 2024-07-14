@@ -32,7 +32,8 @@ const music = musicStore();
 const getDailySongsData = () => {
   if (music.getDailySongs.length === 0) {
     getDailySongs().then((res) => {
-      if (res.data.dailySongs) {
+      console.log(res)
+      if (res.data?.dailySongs) {
         music.setDailySongs(res.data.dailySongs);
       } else {
         $message.error(t("general.message.acquisitionFailed"));

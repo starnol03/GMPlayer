@@ -66,7 +66,7 @@ watch(() => props.album, (newValue) => {
 });
 
 watch(() => props.fps, (newValue) => {
-  if (newValue) coreBGRenderRef.value?.setFPS(newValue);
+  if (typeof newValue !== 'undefined') coreBGRenderRef.value?.setFPS(newValue);
 });
 
 watch(() => props.playing, (newValue) => {
@@ -78,7 +78,7 @@ watch(() => props.playing, (newValue) => {
 });
 
 watch(() => props.flowSpeed, (newValue) => {
-  if (newValue) coreBGRenderRef.value?.setFlowSpeed(newValue);
+  if (typeof newValue !== 'undefined') coreBGRenderRef.value?.setFlowSpeed(newValue);
 });
 
 watch(() => props.staticMode, (newValue) => {

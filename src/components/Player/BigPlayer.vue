@@ -7,8 +7,8 @@
         : '',
       `backgroundColor: ${site.songPicColor}`,
     ]">
-      <BackgroundRender v-if="setting.backgroundImageShow === 'eplor'" :playing="true" :fps="setting.fps"
-        :flowSpeed="setting.flowSpeed"
+      <BackgroundRender v-if="setting.backgroundImageShow === 'eplor'" :fps="music.getPlayState ? setting.fps : 0"
+        :flowSpeed="music.getPlayState ? (setting.dynamicFlowSpeed ? dynamicFlowSpeed : setting.flowSpeed) : 0"
         :album="setting.albumImageUrl === 'none' ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') : setting.albumImageUrl"
         :renderScale="setting.renderScale" style="position: absolute; top: 0; left:0; width: 100%; height: 100%;" />
       <div :class="setting.backgroundImageShow === 'blur' ? 'gray blur' : 'gray'" />
@@ -77,7 +77,7 @@
         </div>
       </div>
       <!-- 音乐频谱 -->
-      <Spectrum />
+      <Spectrum v-if="setting.musicFrequency" :height="60" :show="music.showBigPlayer" />
       <!-- 歌词设置 -->
       <LyricSetting ref="LyricSettingRef" />
     </div>
@@ -103,11 +103,16 @@ import Spectrum from "./Spectrum.vue";
 import LyricSetting from "@/components/DataModal/LyricSetting.vue";
 import screenfull from "screenfull";
 import BackgroundRender from "@/libs/apple-music-like/BackgroundRender.vue";
+import { throttle } from "throttle-debounce";
+import { analyzeAudioIntensity } from "../../utils/fftIntensityAnalyze";
 
 const router = useRouter();
 const music = musicStore();
 const site = siteStore();
 const setting = settingStore();
+
+// 动态流速
+const dynamicFlowSpeed = ref(2)
 
 // 工具栏显隐
 const menuShow = ref(false);
@@ -223,6 +228,13 @@ watch(
   () => music.getPlaySongLyricIndex,
   (val) => lyricsScroll(val)
 );
+
+// 监听频谱更新
+watch(() => music.getSpectrumsData, throttle(200, (val) => {
+  if (!music.getPlayState || !setting.dynamicFlowSpeed) return;
+  const variance = Math.max(Math.round(analyzeAudioIntensity(val) * setting.dynamicFlowSpeedScale), 6)
+  dynamicFlowSpeed.value = variance
+}))
 
 // 监听主题色改变
 watch(

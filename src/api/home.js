@@ -20,7 +20,7 @@ export const getBanner = () => {
 export const getDailySongs = () => {
   return axios({
     method: "GET",
-    url: "/recommend/songs",
+    url: `/recommend/songs`,
     params: {
       timestamp: new Date().getTime(),
     },

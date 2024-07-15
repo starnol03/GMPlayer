@@ -5,7 +5,7 @@ import {
   Hct,
   Score,
 } from "@material/material-color-utilities";
-import { settingStore } from '@/store'
+import { settingStore, siteStore } from '@/store'
 import { chunk } from "./chunk";
 
 /**
@@ -342,12 +342,13 @@ export const getCoverColor = (coverSrc) => {
         const gradient = getGradientFromPalette(palette);
         console.log("图片加载完成：", gradient);
         // 获取图片主色
-        const accentColor = calcAccentColor(image);
-        resolve({ gradient, accentColor });
+        calcAccentColor(image);
+
+        resolve(gradient);
       };
     } catch (error) {
       console.error("图片渐变色生成失败：", error);
-      reject({ gradient: "linear-gradient(-45deg, #666, #fff)", accentColor: '#fff' });
+      reject("linear-gradient(-45deg, #666, #fff)");
     }
   });
 };
@@ -358,6 +359,8 @@ export const getCoverColor = (coverSrc) => {
  */
 const calcAccentColor = (dom) => {
   const settings = settingStore()
+  const site = siteStore();
+  let caccentColor;
   // 创建一个用于提取颜色的 canvas
   const canvas = document.createElement("canvas");
   canvas.width = 50;
@@ -379,16 +382,19 @@ const calcAccentColor = (dom) => {
   const mostFrequentColors = sortedQuantizedColors.slice(0, 5).map((x) => argb2Rgb(x[0]));
   // 如果最频繁的颜色差异很小，使用灰色强调色
   if (mostFrequentColors.every((x) => Math.max(...x) - Math.min(...x) < 5)) {
-    return useGreyAccentColor();
+    caccentColor = useGreyAccentColor();
   }
   // 使用 Score 库对颜色进行评分
   const ranked = Score.score(new Map(sortedQuantizedColors.slice(0, 50)));
   const top = ranked[0];
   const theme = themeFromSourceColor(top);
   const variant = settings.colorType;
-  return getAccentColor(
+
+  caccentColor = getAccentColor(
     Hct.from(theme.palettes[variant].hue, theme.palettes[variant].chroma, 90).toInt(),
   )
+
+  site.songPicColor = caccentColor;
 };
 
 /**

@@ -203,7 +203,7 @@ import {
 } from "@vicons/material";
 import { PlayCycle, PlayOnce, ShuffleOne } from "@icon-park/vue-next";
 import { storeToRefs } from "pinia";
-import { musicStore, settingStore, siteStore } from "@/store";
+import { musicStore, settingStore } from "@/store";
 import {
   createSound,
   setVolume,
@@ -219,7 +219,6 @@ import AddPlaylist from "@/components/DataModal/AddPlaylist.vue";
 import PlayListDrawer from "@/components/DataModal/PlayListDrawer.vue";
 import AllArtists from "@/components/DataList/AllArtists.vue";
 import BigPlayer from "./BigPlayer.vue";
-import { getCoverColor } from '@/utils/getCoverColor'
 import "vue-slider-component/theme/default.css";
 import { watch } from "vue";
 
@@ -227,7 +226,6 @@ const { t } = useI18n();
 const router = useRouter();
 const setting = settingStore();
 const music = musicStore();
-const site = siteStore();
 const { persistData } = storeToRefs(music);
 const addPlayListRef = ref(null);
 const PlayListDrawerRef = ref(null);
@@ -379,17 +377,7 @@ const songChange = debounce(500, (val) => {
   }
   // 加载数据
   getPlaySongData(val);
-  getPicColor(val?.album.picUrl);
 });
-
-// 获取封面图主色
-const getPicColor = async (url) => {
-  if (!url) return false;
-  const color = await getCoverColor(url)
-
-  site.songPicColor = `rgb(${color.accentColor})`;
-  site.songPicGradient = color.gradient;
-};
 
 onMounted(() => {
   // 挂载方法
@@ -397,7 +385,6 @@ onMounted(() => {
   // 获取音乐数据
   if (music.getPlaylists[0] && music.getPlaySongData) {
     getPlaySongData(music.getPlaySongData);
-    getPicColor(music.getPlaySongData.album.picUrl);
   }
 });
 
@@ -415,14 +402,6 @@ watch(
   () => persistData.value.playVolume,
   (val) => {
     if (player.value) setVolume(player.value, val);
-  }
-)
-
-// 监听取色类型变化
-watch(
-  () => setting.colorType,
-  () => {
-    getPicColor(music.getPlaySongData.album.picUrl);
   }
 )
 

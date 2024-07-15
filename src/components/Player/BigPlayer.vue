@@ -1,17 +1,31 @@
 <template>
-  <Transition name="up">
+  <Transition name="up" mode="out-in">
     <div v-if="music.showBigPlayer" class="bplayer" :style="[
       music.getPlaySongData && setting.backgroundImageShow === 'blur' ? 'background-image: url(' +
         music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
         '?param=50y50)'
         : '',
-      `background: ${site.songPicGradient}`,
-      `--main-cover-color: ${site.songPicColor}`
+      `--cover-bg: ${songPicGradient}`,
+      `--main-cover-color: rgb(${setting.immersivePlayer ? songPicColor : '255,255,255'})`
     ]">
-      <BackgroundRender v-if="setting.backgroundImageShow === 'eplor'" :fps="music.getPlayState ? setting.fps : 0"
-        :flowSpeed="music.getPlayState ? (setting.dynamicFlowSpeed ? dynamicFlowSpeed : setting.flowSpeed) : 0"
-        :album="setting.albumImageUrl === 'none' ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') : setting.albumImageUrl"
-        :renderScale="setting.renderScale" style="position: absolute; top: 0; left:0; width: 100%; height: 100%;" />
+      <!-- 切歌取色背景过度 -->
+      <Transition name="fade" mode="out-in">
+        <div :key="`bg--${songPicGradient}`" :class="['overlay', setting.backgroundImageShow]">
+          <template v-if="setting.backgroundImageShow === 'blur'">
+            <img v-for="item in 4" :key="item" :src="music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
+              `?param=${item * 50}y${item * 50}`" :style="{
+                transform: `rotate(${item * 180}deg)`,
+              }" class="overlay-img" alt="overlay" />
+          </template>
+        </div>
+      </Transition>
+
+      <template v-if="setting.backgroundImageShow === 'eplor'">
+        <BackgroundRender :fps="music.getPlayState ? setting.fps : 0"
+          :flowSpeed="music.getPlayState ? (setting.dynamicFlowSpeed ? dynamicFlowSpeed : setting.flowSpeed) : 0"
+          :album="setting.albumImageUrl === 'none' ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') : setting.albumImageUrl"
+          :renderScale="setting.renderScale" class="overlay" />
+      </template>
       <div :class="setting.backgroundImageShow === 'blur' ? 'gray blur' : 'gray'" />
       <div class="icon-menu">
         <div class="menu-left">
@@ -28,7 +42,8 @@
           </div>
         </div>
       </div>
-      <div :class="music.getPlaySongLyric.lrc[0] && music.getPlaySongLyric.lrc.length > 4
+
+      <div :class="music.getPlaySongLyric.lrc[0] && music.getPlaySongLyric.lrc.length > 4 && !music.getLoadingState
         ? 'all'
         : 'all noLrc'
         ">
@@ -40,65 +55,67 @@
         </Transition>
         <div class="left">
           <PlayerCover v-if="setting.playerStyle === 'cover'" />
-          <PlayerRecord v-else />
+          <PlayerRecord v-else-if="setting.playerStyle === 'record'" />
         </div>
-        <div class="right">
-          <Transition name="lrc">
-            <div class="lrcShow" v-if="
-              music.getPlaySongLyric.lrc[0] &&
-              music.getPlaySongLyric.lrc.length > 4
-            ">
-              <div class="data" v-show="setting.playerStyle === 'record'">
-                <div class="name text-hidden">
-                  <span>{{
-                    music.getPlaySongData
-                    ? music.getPlaySongData.name
-                    : $t("other.noSong")
+        <Transition name="fade" mode="out-in">
+          <div class="right">
+            <Transition name="lrc">
+              <div class="lrcShow" v-if="
+                music.getPlaySongLyric.lrc[0] &&
+                music.getPlaySongLyric.lrc.length > 4
+              ">
+                <div class="data" v-show="setting.playerStyle === 'record'">
+                  <div class="name text-hidden">
+                    <span>{{
+                      music.getPlaySongData
+                        ? music.getPlaySongData.name
+                        : $t("other.noSong")
                     }}</span>
-                  <span v-if="music.getPlaySongData && music.getPlaySongData.alia">{{ music.getPlaySongData.alia[0]
-                    }}</span>
-                </div>
-                <div class="artists text-hidden" v-if="music.getPlaySongData && music.getPlaySongData.artist">
-                  <span class="artist" v-for="(item, index) in music.getPlaySongData.artist" :key="item">
-                    <span>{{ item.name }}</span>
-                    <span v-if="index != music.getPlaySongData.artist.length - 1">/</span>
-                  </span>
-                </div>
-              </div>
-              <RollingLyrics @mouseenter="
-                lrcMouseStatus = setting.lrcMousePause ? true : false
-                " @mouseleave="lrcAllLeave" @lrcTextClick="lrcTextClick" />
-              <div :class="menuShow ? 'menu show' : 'menu'" v-show="setting.playerStyle === 'record'">
-                <div class="time">
-                  <span>{{ music.getPlaySongTime.songTimePlayed }}</span>
-                  <vue-slider v-model="music.getPlaySongTime.barMoveDistance" @drag-start="music.setPlayState(false)"
-                    @drag-end="sliderDragEnd" @click.stop="
-                      songTimeSliderUpdate(music.getPlaySongTime.barMoveDistance)
-                      " :tooltip="'none'" />
-                  <span>{{ music.getPlaySongTime.songTimeDuration }}</span>
-                </div>
-                <div class="control">
-                  <n-icon v-if="!music.getPersonalFmMode" class="prev" size="30" :component="SkipPreviousRound"
-                    @click.stop="music.setPlaySongIndex('prev')" />
-                  <n-icon v-else class="dislike" :component="ThumbDownRound"
-                    @click="music.setFmDislike(music.getPersonalFmData.id)" />
-                  <div class="play-state">
-                    <n-button :loading="music.getLoadingState" secondary circle :keyboard="false" :focusable="false">
-                      <template #icon>
-                        <Transition name="fade" mode="out-in">
-                          <n-icon size="42" :component="music.getPlayState ? PauseRound : PlayArrowRound"
-                            @click.stop="music.setPlayState(!music.getPlayState)" />
-                        </Transition>
-                      </template>
-                    </n-button>
+                    <span v-if="music.getPlaySongData && music.getPlaySongData.alia">{{ music.getPlaySongData.alia[0]
+                      }}</span>
                   </div>
-                  <n-icon class="next" size="30" :component="SkipNextRound"
-                    @click.stop="music.setPlaySongIndex('next')" />
+                  <div class="artists text-hidden" v-if="music.getPlaySongData && music.getPlaySongData.artist">
+                    <span class="artist" v-for="(item, index) in music.getPlaySongData.artist" :key="item">
+                      <span>{{ item.name }}</span>
+                      <span v-if="index != music.getPlaySongData.artist.length - 1">/</span>
+                    </span>
+                  </div>
+                </div>
+                <RollingLyrics @mouseenter="
+                  lrcMouseStatus = setting.lrcMousePause ? true : false
+                  " @mouseleave="lrcAllLeave" @lrcTextClick="lrcTextClick" />
+                <div :class="menuShow ? 'menu show' : 'menu'" v-show="setting.playerStyle === 'record'">
+                  <div class="time">
+                    <span>{{ music.getPlaySongTime.songTimePlayed }}</span>
+                    <vue-slider v-model="music.getPlaySongTime.barMoveDistance" @drag-start="music.setPlayState(false)"
+                      @drag-end="sliderDragEnd" @click.stop="
+                        songTimeSliderUpdate(music.getPlaySongTime.barMoveDistance)
+                        " :tooltip="'none'" />
+                    <span>{{ music.getPlaySongTime.songTimeDuration }}</span>
+                  </div>
+                  <div class="control">
+                    <n-icon v-if="!music.getPersonalFmMode" class="prev" size="30" :component="SkipPreviousRound"
+                      @click.stop="music.setPlaySongIndex('prev')" />
+                    <n-icon v-else class="dislike" :component="ThumbDownRound"
+                      @click="music.setFmDislike(music.getPersonalFmData.id)" />
+                    <div class="play-state">
+                      <n-button :loading="music.getLoadingState" secondary circle :keyboard="false" :focusable="false">
+                        <template #icon>
+                          <Transition name="fade" mode="out-in">
+                            <n-icon size="42" :component="music.getPlayState ? PauseRound : PlayArrowRound"
+                              @click.stop="music.setPlayState(!music.getPlayState)" />
+                          </Transition>
+                        </template>
+                      </n-button>
+                    </div>
+                    <n-icon class="next" size="30" :component="SkipNextRound"
+                      @click.stop="music.setPlaySongIndex('next')" />
+                  </div>
                 </div>
               </div>
-            </div>
-          </Transition>
-        </div>
+            </Transition>
+          </div>
+        </Transition>
       </div>
       <!-- 音乐频谱 -->
       <Spectrum v-if="setting.musicFrequency" :height="60" :show="music.showBigPlayer" />
@@ -134,11 +151,14 @@ import "vue-slider-component/theme/default.css";
 import BackgroundRender from "@/libs/apple-music-like/BackgroundRender.vue";
 import { throttle } from "throttle-debounce"
 import { analyzeAudioIntensity } from "../../utils/fftIntensityAnalyze";
+import { storeToRefs } from "pinia";
 
 const router = useRouter();
 const music = musicStore();
 const site = siteStore();
 const setting = settingStore();
+
+const { songPicGradient, songPicColor } = storeToRefs(site)
 
 // 动态流速
 const dynamicFlowSpeed = ref(2)
@@ -228,7 +248,7 @@ const lyricsScroll = (index) => {
 const changePwaColor = () => {
   const themeColorMeta = document.querySelector('meta[name="theme-color"]');
   if (music.showBigPlayer) {
-    themeColorMeta.setAttribute("content", site.songPicColor);
+    themeColorMeta.setAttribute("content", songPicColor);
   } else {
     if (setting.getSiteTheme === "light") {
       themeColorMeta.setAttribute("content", "#ffffff");
@@ -239,6 +259,7 @@ const changePwaColor = () => {
 };
 
 onMounted(async () => {
+  console.log('music data', music.getPlaySongData)
   nextTick().then(() => {
     // 滚动歌词
     lyricsScroll(music.getPlaySongLyricIndex);
@@ -316,7 +337,7 @@ watch(
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 9999;
+  z-index: 2000;
   overflow: hidden;
   color: var(--main-cover-color);
   background-repeat: no-repeat;
@@ -324,6 +345,49 @@ watch(
   background-position: center;
   display: flex;
   justify-content: center;
+
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+
+    &.solid {
+      background: var(--cover-bg)
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #00000060;
+      backdrop-filter: blur(20px);
+    }
+
+    &.blur {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .overlay-img {
+        width: 150%;
+        height: 150%;
+        filter: blur(80px) contrast(1.2);
+      }
+    }
+
+    &.none {
+      &::after {
+        display: none;
+      }
+    }
+  }
 
   &::after {
     // content: "";
@@ -412,8 +476,9 @@ watch(
     height: 100%;
     display: flex;
     flex-direction: row;
+    will-change: transform, padding-right;
     align-items: center;
-    transition: all 0.3s ease-in-out;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
 
     &.noLrc {
@@ -439,7 +504,8 @@ watch(
         }
 
         .right {
-          display: none !important;
+          opacity: 0 !important;
+          display: none;
         }
       }
     }
@@ -490,17 +556,19 @@ watch(
     .left {
       // flex: 1;
       // padding: 0 4vw;
+      transform: translateX(0);
       width: 50%;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
       justify-content: center;
       transition: all 0.3s ease-in-out;
-      padding-right: 3.8vw;
+      padding-right: 5rem;
       box-sizing: border-box;
     }
 
     .right {
+      transform: translateX(0);
       flex: 1;
       height: 100%;
       padding-left: 2vw;

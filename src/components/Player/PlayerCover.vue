@@ -1,17 +1,20 @@
 <template>
   <div class="cover">
-    <div :class="['pic', !music.getPlayState ? 'pause' : '', music.getLoadingState ? 'loading' : '']">
-      <img class="album" :src="music.getPlaySongData
-        ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
-        '?param=1024y1024'
-        : '/images/pic/default.png'
-        " alt="cover" />
-      <img class="shadow" :src="music.getPlaySongData
-        ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
-        '?param=1024y1024'
-        : '/images/pic/default.png'
-        " alt="shadow" />
-    </div>
+    <Transition name="fade" mode="out-in">
+      <div :key="`cover_pic--${music.getPlaySongData.album.pic}`"
+        :class="['pic', !music.getPlayState ? 'pause' : '', music.getLoadingState ? 'loading' : '']">
+        <img class="album" :src="music.getPlaySongData
+          ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
+          '?param=1024y1024'
+          : '/images/pic/default.png'
+          " alt="cover" />
+        <img class="shadow" :src="music.getPlaySongData
+          ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
+          '?param=1024y1024'
+          : '/images/pic/default.png'
+          " alt="shadow" />
+      </div>
+    </Transition>
     <div class="control">
       <div class="data">
         <div class="desc">
@@ -106,8 +109,8 @@
               : $t("general.name.unmute")
           }}
         </n-popover>
-        <vue-slider :tooltip-formatter="`${persistData.playVolume * 100}%`" :tooltip-placement="['bottom']" :min="0"
-          :max="1" :interval="0.01" v-model="persistData.playVolume" />
+        <vue-slider :tooltip="'none'" :min="0" :max="1" :interval="0.001" v-model="persistData.playVolume" />
+        <span>100%</span>
       </div>
     </div>
   </div>

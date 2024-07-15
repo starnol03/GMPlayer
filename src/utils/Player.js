@@ -1,9 +1,11 @@
 import { Howl, Howler } from "howler";
 import { songScrobble } from "@/api/song";
-import { musicStore,settingStore } from "@/store";
+import { musicStore, settingStore, siteStore } from "@/store";
 import { NIcon } from "naive-ui";
 import { MusicNoteFilled } from "@vicons/material";
 import getLanguageData from "./getLanguageData";
+import { getCoverColor } from '@/utils/getCoverColor'
+
 
 // 歌曲信息更新定时器
 let timeupdateInterval = null;
@@ -30,6 +32,7 @@ export const createSound = (src, autoPlay = true) => {
   try {
     Howler.unload();
     const music = musicStore();
+    const site = siteStore()
     const settings = settingStore()
     const sound = new Howl({
       src: [src],
@@ -38,6 +41,10 @@ export const createSound = (src, autoPlay = true) => {
       preload: true,
       volume: music.persistData.playVolume,
     });
+
+    // 更新取色
+    getCoverColor(music.getPlaySongData.album.picUrl).then(color => { site.songPicGradient = color }).catch(err => { console.error('取色出错', err) });
+
     if (autoPlay && music.getPlayState) {
       fadePlayOrPause(sound, "play", music.persistData.playVolume);
     }

@@ -1,6 +1,9 @@
 <template>
-  <n-drawer class="playlist-drawer" v-model:show="playListShow" :z-index="1" :trap-focus="false"
-    :block-scroll="false" placement="right" to="#mainContent" @after-leave="music.showPlayList = false"
+  <n-drawer class="playlist-drawer" v-model:show="playListShow" :z-index="1" :width="400" :trap-focus="false"
+    :block-scroll="false" :style="{
+      '--cover-main-color': `rgb(${site.songPicColor})` || '#efefef',
+      '--cover-second-color': `rgba(${site.songPicColor}, 0.14)` || '#efefef14',
+    }" placement="right" to="#mainContent" @after-leave="music.showPlayList = false"
     @mask-click="music.showPlayList = false">
     <n-drawer-content :native-scrollbar="false" closable>
       <template #header>
@@ -50,7 +53,7 @@
 </template>
 
 <script setup>
-import { musicStore } from "@/store";
+import { musicStore, siteStore } from "@/store";
 import { DeleteFour } from "@icon-park/vue-next";
 import { soundStop } from "@/utils/Player";
 import { useI18n } from "vue-i18n";
@@ -58,6 +61,7 @@ import AllArtists from "@/components/DataList/AllArtists.vue";
 
 const { t } = useI18n();
 const music = musicStore();
+const site = siteStore()
 
 // 播放列表显隐
 const playListShow = ref(false);
@@ -112,16 +116,60 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .n-drawer-mask {
   backdrop-filter: blur(20px);
 }
+
 .playlist-drawer {
-  background-color: transparent;
-  box-shadow: none;
   width: 400px !important;
-  border-radius: 12px 0 0 12px;
+  border-radius: 0;
   transition: width 0.3s;
+
+  .n-drawer-header {
+    height: 70px;
+    box-sizing: border-box;
+  }
+
+  .n-scrollbar-content {
+    padding: 16px !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  &.full-player {
+    background-color: transparent;
+    box-shadow: none;
+
+    .n-drawer-header {
+      border-bottom: none;
+
+      .pl-name {
+
+        a,
+        span,
+        .n-icon {
+          color: var(--cover-main-color) !important;
+        }
+      }
+
+      .n-base-icon {
+        color: var(--cover-main-color);
+      }
+    }
+  }
+
+  @media (max-width: 700px) {
+    width: 100% !important;
+    border-radius: 0;
+  }
+}
+</style>
+
+<style lang="scss" scoped>
+.playlist-drawer {
 
   .v-enter-active,
   .v-leave-active {
@@ -172,23 +220,23 @@ onBeforeUnmount(() => {
     }
 
     &.play {
-      background-color: var(--main-second-color);
-      border-color: var(--main-color);
+      background-color: var(--cover-second-color);
+      border-color: var(--cover-main-color);
 
       a,
       span,
       div,
       .n-icon {
-        color: var(--main-color);
+        color: var(--cover-main-color);
       }
 
       :deep(span) {
-        color: var(--main-color);
+        color: var(--cover-main-color);
       }
 
       .right {
         .remove {
-          color: var(--main-color);
+          color: var(--cover-main-color);
 
           &:hover {
             background-color: var(--n-action-color);
@@ -214,7 +262,7 @@ onBeforeUnmount(() => {
         .line {
           width: 3px;
           height: 16px;
-          background-color: var(--main-color);
+          background-color: var(--cover-main-color);
           border-radius: 4px;
           transition: all 0.3s;
           animation: lineMove 1s ease-in-out infinite;
@@ -265,7 +313,7 @@ onBeforeUnmount(() => {
         padding: 6px;
 
         &:hover {
-          color: var(--main-color);
+          color: var(--cover-main-color);
           background-color: var(--n-border-color);
         }
       }

@@ -1,29 +1,19 @@
 <template>
   <Transition name="show">
-    <n-card
-      v-show="music.getPlaylists[0] && music.showPlayBar"
-      class="player"
-      content-style="padding: 0"
-      @click.stop="setting.bottomClick ? music.setBigPlayerState(true) : null"
-    >
+    <n-card v-show="music.getPlaylists[0] && music.showPlayBar" class="player" content-style="padding: 0"
+      @click.stop="setting.bottomClick ? music.setBigPlayerState(true) : null">
       <div class="slider">
         <span>{{ music.getPlaySongTime.songTimePlayed }}</span>
-        <vue-slider
-          v-model="music.getPlaySongTime.barMoveDistance"
-          @drag-start="music.setPlayState(false)"
-          @drag-end="sliderDragEnd"
-          @click.stop="
+        <vue-slider v-model="music.getPlaySongTime.barMoveDistance" @drag-start="music.setPlayState(false)"
+          @drag-end="sliderDragEnd" @click.stop="
             songTimeSliderUpdate(music.getPlaySongTime.barMoveDistance)
-          "
-          :tooltip="'active'"
-          :use-keyboard="false"
-        >
+            " :tooltip="'active'" :use-keyboard="false">
           <template v-slot:tooltip>
             <div class="slider-tooltip">
               {{
                 getSongPlayingTime(
                   (music.getPlaySongTime.duration / 100) *
-                    music.getPlaySongTime.barMoveDistance
+                  music.getPlaySongTime.barMoveDistance
                 )
               }}
             </div>
@@ -34,24 +24,17 @@
       <div class="all">
         <div class="data">
           <div class="pic" @click.stop="music.setBigPlayerState(true)">
-            <img
-              :src="
-                music.getPlaySongData
-                  ? music.getPlaySongData.album.picUrl.replace(
-                      /^http:/,
-                      'https:'
-                    ) + '?param=50y50'
-                  : '/images/pic/default.png'
-              "
-              alt="pic"
-            />
+            <img :src="music.getPlaySongData
+              ? music.getPlaySongData.album.picUrl.replace(
+                /^http:/,
+                'https:'
+              ) + '?param=50y50'
+              : '/images/pic/default.png'
+              " alt="pic" />
             <n-icon class="open" size="30" :component="KeyboardArrowUpFilled" />
           </div>
           <div class="name">
-            <div
-              class="song text-hidden"
-              @click.stop="router.push(`/song?id=${music.getPlaySongData.id}`)"
-            >
+            <div class="song text-hidden" @click.stop="router.push(`/song?id=${music.getPlaySongData.id}`)">
               {{
                 music.getPlaySongData
                   ? music.getPlaySongData.name
@@ -63,44 +46,26 @@
               <Transition name="fade" mode="out-in">
                 <template v-if="setting.bottomLyricShow">
                   <Transition name="fade" mode="out-in">
-                    <AllArtists
-                      v-if="
-                        !music.getPlayState || !music.getPlaySongLyric?.lrc[0]
-                      "
-                      class="text-hidden"
-                      :artistsData="music.getPlaySongData.artist"
-                    />
-                    <n-text
-                      v-else-if="
-                        setting.showYrc &&
-                        music.getPlaySongLyricIndex != -1 &&
-                        music.getPlaySongLyric.hasYrc
-                      "
-                      class="lrc text-hidden"
-                    >
-                      <n-text
-                        v-for="item in music.getPlaySongLyric.yrc[
-                          music.getPlaySongLyricIndex
-                        ].content"
-                        :key="item"
-                        :depth="3"
-                      >
+                    <AllArtists v-if="
+                      !music.getPlayState || !music.getPlaySongLyric?.lrc[0]
+                    " class="text-hidden" :artistsData="music.getPlaySongData.artist" />
+                    <n-text v-else-if="
+                      setting.showYrc &&
+                      music.getPlaySongLyricIndex != -1 &&
+                      music.getPlaySongLyric.hasYrc
+                    " class="lrc text-hidden">
+                      <n-text v-for="item in music.getPlaySongLyric.yrc[
+                        music.getPlaySongLyricIndex
+                      ].content" :key="item" :depth="3">
                         {{ item.content }}
                       </n-text>
                     </n-text>
-                    <n-text
-                      v-else-if="
-                        music.getPlaySongLyricIndex != -1 &&
-                        music.getPlaySongLyric?.lrc[0]
-                      "
-                      class="lrc"
-                    >
+                    <n-text v-else-if="
+                      music.getPlaySongLyricIndex != -1 &&
+                      music.getPlaySongLyric?.lrc[0]
+                    " class="lrc">
                       <Transition name="fade" mode="out-in">
-                        <n-text
-                          class="text-hidden"
-                          :key="music.getPlaySongLyricIndex"
-                          :depth="3"
-                        >
+                        <n-text class="text-hidden" :key="music.getPlaySongLyricIndex" :depth="3">
                           {{
                             music.getPlaySongLyric.lrc[
                               music.getPlaySongLyricIndex
@@ -109,76 +74,39 @@
                         </n-text>
                       </Transition>
                     </n-text>
-                    <AllArtists
-                      v-else
-                      class="text-hidden"
-                      :artistsData="music.getPlaySongData.artist"
-                    />
+                    <AllArtists v-else class="text-hidden" :artistsData="music.getPlaySongData.artist" />
                   </Transition>
                 </template>
                 <template v-else>
-                  <AllArtists
-                    class="text-hidden"
-                    :artistsData="music.getPlaySongData.artist"
-                  />
+                  <AllArtists class="text-hidden" :artistsData="music.getPlaySongData.artist" />
                 </template>
               </Transition>
             </div>
           </div>
         </div>
         <div class="control">
-          <n-icon
-            v-if="!music.getPersonalFmMode"
-            class="prev"
-            size="30"
-            :component="SkipPreviousRound"
-            @click.stop="music.setPlaySongIndex('prev')"
-          />
-          <n-icon
-            v-else
-            class="dislike"
-            size="20"
-            :component="ThumbDownRound"
-            @click="music.setFmDislike(music.getPersonalFmData.id)"
-          />
+          <n-icon v-if="!music.getPersonalFmMode" class="prev" size="30" :component="SkipPreviousRound"
+            @click.stop="music.setPlaySongIndex('prev')" />
+          <n-icon v-else class="dislike" size="20" :component="ThumbDownRound"
+            @click="music.setFmDislike(music.getPersonalFmData.id)" />
           <div class="play-state">
-            <n-icon
-              size="46"
-              :component="
-                music.getPlayState ? PauseCircleFilled : PlayCircleFilled
-              "
-              @click.stop="music.setPlayState(!music.getPlayState)"
-            />
+            <n-icon size="46" :component="music.getPlayState ? PauseCircleFilled : PlayCircleFilled
+              " @click.stop="music.setPlayState(!music.getPlayState)" />
           </div>
-          <n-icon
-            class="next"
-            size="30"
-            :component="SkipNextRound"
-            @click.stop="music.setPlaySongIndex('next')"
-          />
+          <n-icon class="next" size="30" :component="SkipNextRound" @click.stop="music.setPlaySongIndex('next')" />
         </div>
         <div :class="music.getPersonalFmMode ? 'menu fm' : 'menu'">
-          <n-popover
-            v-if="music.getPlaySongData"
-            trigger="hover"
-            :keep-alive-on-hover="false"
-          >
+          <n-popover v-if="music.getPlaySongData" trigger="hover" :keep-alive-on-hover="false">
             <template #trigger>
               <div class="like">
-                <n-icon
-                  class="like-icon"
-                  size="24"
-                  :component="
-                    music.getSongIsLike(music.getPlaySongData.id)
-                      ? FavoriteRound
-                      : FavoriteBorderRound
-                  "
-                  @click.stop="
+                <n-icon class="like-icon" size="24" :component="music.getSongIsLike(music.getPlaySongData.id)
+                  ? FavoriteRound
+                  : FavoriteBorderRound
+                  " @click.stop="
                     music.getSongIsLike(music.getPlaySongData.id)
                       ? music.changeLikeList(music.getPlaySongData.id, false)
                       : music.changeLikeList(music.getPlaySongData.id, true)
-                  "
-                />
+                    " />
               </div>
             </template>
             {{
@@ -190,69 +118,43 @@
           <n-popover trigger="hover" :keep-alive-on-hover="false">
             <template #trigger>
               <div class="add-playlist">
-                <n-icon
-                  class="add-icon"
-                  size="30"
-                  :component="PlaylistAddRound"
-                  @click.stop="
-                    addPlayListRef.openAddToPlaylist(music.getPlaySongData.id)
-                  "
-                />
+                <n-icon class="add-icon" size="30" :component="PlaylistAddRound" @click.stop="
+                  addPlayListRef.openAddToPlaylist(music.getPlaySongData.id)
+                  " />
               </div>
             </template>
             {{ $t("menu.add") }}
           </n-popover>
-          <n-dropdown
-            trigger="hover"
-            :options="patternOptions"
-            :show-arrow="true"
-            @select="patternClick"
-          >
+          <n-dropdown trigger="hover" :options="patternOptions" :show-arrow="true" @select="patternClick">
             <div class="pattern">
-              <n-icon
-                :component="
-                  persistData.playSongMode === 'normal'
-                    ? PlayCycle
-                    : persistData.playSongMode === 'random'
-                    ? ShuffleOne
-                    : PlayOnce
-                "
-                @click.stop="music.setPlaySongMode()"
-              />
+              <n-icon :component="persistData.playSongMode === 'normal'
+                ? PlayCycle
+                : persistData.playSongMode === 'random'
+                  ? ShuffleOne
+                  : PlayOnce
+                " @click.stop="music.setPlaySongMode()" />
             </div>
           </n-dropdown>
           <n-popover trigger="hover" :keep-alive-on-hover="false">
             <template #trigger>
               <div :class="music.showPlayList ? 'playlist open' : 'playlist'">
-                <n-icon
-                  size="30"
-                  :component="PlaylistPlayRound"
-                  @click.stop="music.showPlayList = !music.showPlayList"
-                />
+                <n-icon size="30" :component="PlaylistPlayRound"
+                  @click.stop="music.showPlayList = !music.showPlayList" />
               </div>
             </template>
             {{ $t("general.name.playlists") }}
           </n-popover>
           <div class="volume">
-            <n-popover
-              trigger="hover"
-              placement="top-start"
-              :keep-alive-on-hover="false"
-            >
+            <n-popover trigger="hover" placement="top-start" :keep-alive-on-hover="false">
               <template #trigger>
-                <n-icon
-                  size="28"
-                  :component="
-                    persistData.playVolume == 0
-                      ? VolumeOffRound
-                      : persistData.playVolume < 0.4
-                      ? VolumeMuteRound
-                      : persistData.playVolume < 0.7
+                <n-icon size="28" :component="persistData.playVolume == 0
+                  ? VolumeOffRound
+                  : persistData.playVolume < 0.4
+                    ? VolumeMuteRound
+                    : persistData.playVolume < 0.7
                       ? VolumeDownRound
                       : VolumeUpRound
-                  "
-                  @click.stop="volumeMute"
-                />
+                  " @click.stop="volumeMute" />
               </template>
               {{
                 persistData.playVolume > 0
@@ -260,15 +162,8 @@
                   : $t("general.name.unmute")
               }}
             </n-popover>
-            <n-slider
-              class="volmePg"
-              v-model:value="persistData.playVolume"
-              :tooltip="false"
-              :min="0"
-              :max="1"
-              :step="0.01"
-              @click.stop
-            />
+            <n-slider class="volmePg" v-model:value="persistData.playVolume" :tooltip="false" :min="0" :max="1"
+              :step="0.01" @click.stop />
           </div>
         </div>
       </div>
@@ -326,6 +221,7 @@ import AllArtists from "@/components/DataList/AllArtists.vue";
 import BigPlayer from "./BigPlayer.vue";
 import { getCoverColor } from '@/utils/getCoverColor'
 import "vue-slider-component/theme/default.css";
+import { watch } from "vue";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -520,7 +416,15 @@ watch(
   (val) => {
     if (player.value) setVolume(player.value, val);
   }
-);
+)
+
+// 监听取色类型变化
+watch(
+  () => setting.colorType,
+  () => {
+    getPicColor(music.getPlaySongData.album.picUrl);
+  }
+)
 
 // 监听当前音乐状态变化
 watch(
@@ -545,10 +449,12 @@ watch(
   transform: translateY(0);
   transition: all 0.3s cubic-bezier(0.65, 0.05, 0.36, 1);
 }
+
 .show-enter-from,
 .show-leave-to {
   transform: translateY(80px);
 }
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -558,12 +464,14 @@ watch(
 .fade-leave-to {
   opacity: 0;
 }
+
 .player {
   height: 70px;
   position: fixed;
   bottom: 0;
   left: 0;
   z-index: 2;
+
   .slider {
     position: absolute;
     top: -12px;
@@ -572,14 +480,17 @@ watch(
     display: flex;
     align-items: center;
     justify-content: space-between;
+
     @media (max-width: 640px) {
       top: -8px;
+
       > {
         span {
           display: none;
         }
       }
     }
+
     > {
       span {
         font-size: 12px;
@@ -591,10 +502,12 @@ watch(
         margin: 0 2px;
       }
     }
+
     .vue-slider {
       width: 100% !important;
       height: 3px !important;
       cursor: pointer;
+
       .slider-tooltip {
         font-size: 12px;
         white-space: nowrap;
@@ -603,16 +516,20 @@ watch(
         padding: 2px 8px;
         border-radius: 25px;
       }
+
       :deep(.vue-slider-rail) {
         background-color: var(--n-border-color);
         border-radius: 25px;
+
         .vue-slider-process {
           background-color: var(--main-color);
         }
+
         .vue-slider-dot {
           width: 12px !important;
           height: 12px !important;
         }
+
         .vue-slider-dot-handle-focus {
           box-shadow: 0px 0px 1px 2px var(--main-color);
         }
@@ -627,10 +544,12 @@ watch(
     align-items: center;
     max-width: 1400px;
     margin: 0 auto;
+
     .data {
       display: flex;
       flex-direction: row;
       align-items: center;
+
       .pic {
         width: 50px;
         height: 50px;
@@ -641,6 +560,7 @@ watch(
         position: relative;
         box-shadow: 0 6px 8px -2px rgb(0 0 0 / 16%);
         cursor: pointer;
+
         img {
           width: 100%;
           height: 100%;
@@ -648,6 +568,7 @@ watch(
           filter: blur(0) brightness(1);
           transition: all 0.3s;
         }
+
         .open {
           position: absolute;
           top: calc(50% - 15px);
@@ -659,38 +580,45 @@ watch(
           transform: scale(0.6);
           transition: all 0.3s;
         }
+
         &:hover {
           img {
             transform: scale(1.1);
             filter: blur(6px) brightness(0.8);
           }
+
           .open {
             opacity: 1;
             transform: scale(1);
           }
         }
       }
+
       .name {
         .song {
           font-size: 16px;
           font-weight: bold;
           cursor: pointer;
           transition: all 0.3s;
+
           &:hover {
             color: var(--main-color);
           }
         }
+
         .artisrOrLrc {
           font-size: 12px;
           margin-top: 2px;
         }
       }
     }
+
     .control {
       display: flex;
       flex-direction: row;
       align-items: center;
       justify-content: center;
+
       .next,
       .prev,
       .dislike {
@@ -700,17 +628,21 @@ watch(
         border-radius: 50%;
         transform: scale(1);
         transition: all 0.3s;
+
         &:hover {
           color: var(--n-color-embedded);
           background-color: var(--main-color);
         }
+
         &:active {
           transform: scale(0.9);
         }
       }
+
       .dislike {
         padding: 9px;
       }
+
       .play-state {
         width: 46px;
         height: 46px;
@@ -719,14 +651,17 @@ watch(
         cursor: pointer;
         transform: scale(1);
         transition: all 0.3s;
+
         &:hover {
           transform: scale(1.1);
         }
+
         &:active {
           transform: scale(1);
         }
       }
     }
+
     .menu {
       position: relative;
       height: 100%;
@@ -735,7 +670,9 @@ watch(
       align-items: center;
       justify-content: flex-end;
       color: var(--main-color);
+
       @media (max-width: 640px) {
+
         .volume,
         .like,
         .add-playlist,
@@ -743,54 +680,66 @@ watch(
           display: none !important;
         }
       }
+
       &.fm {
+
         .pattern,
         .playlist {
           display: none;
         }
       }
+
       .n-icon {
         padding: 4px;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s;
+
         @media (min-width: 640px) {
           &:hover {
             background-color: var(--main-color);
             color: var(--n-color-embedded);
           }
         }
+
         &:active {
           transform: scale(0.95);
         }
       }
+
       .like {
         display: flex;
         align-items: center;
         justify-content: center;
+
         .n-icon {
           padding: 7px;
           margin-top: 1px;
         }
       }
+
       .add-playlist {
         margin-left: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
       }
+
       .pattern {
         margin-left: 8px;
+
         .n-icon {
           font-size: 22px;
           padding: 8px;
         }
       }
+
       .playlist {
         margin-left: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
+
         &.open {
           .n-icon {
             background-color: var(--main-color);
@@ -798,36 +747,44 @@ watch(
           }
         }
       }
+
       .volume {
         display: flex;
         align-items: center;
         flex-direction: row;
         margin-left: 8px;
         width: 100px;
+
         .n-icon {
           margin-right: 6px;
         }
+
         .volmePg {
           --n-handle-size: 12px;
           --n-rail-height: 3px;
         }
       }
     }
+
     @media (max-width: 620px) {
       display: flex;
       flex-direction: row;
       justify-content: space-between;
+
       .data {
         .time {
           display: none;
         }
       }
+
       .control {
         margin-left: auto;
+
         .prev,
         .next {
           display: none;
         }
+
         .play-state {
           margin: 0;
         }

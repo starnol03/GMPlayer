@@ -6,7 +6,7 @@
         '?param=50y50)'
         : '',
       `--cover-bg: ${songPicGradient}`,
-      `--main-cover-color: rgb(${songPicColor})`
+      `--main-cover-color: rgb(${setting.immersivePlayer ? songPicColor : '255,255,255'})`
     ]">
       <!-- 切歌取色背景过度 -->
       <Transition name="fade" mode="out-in">

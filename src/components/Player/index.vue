@@ -387,7 +387,7 @@ const getPicColor = async (url) => {
   if (!url) return false;
   const color = await getCoverColor(url)
 
-  site.songPicColor = `rgb(${color.accentColor})`;
+  site.songPicColor = color.accentColor;
   site.songPicGradient = color.gradient;
 };
 

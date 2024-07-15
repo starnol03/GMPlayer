@@ -6,7 +6,7 @@
         '?param=50y50)'
         : '',
       `background: ${site.songPicGradient}`,
-      `--main-cover-color: ${site.songPicColor}`
+      `--main-cover-color: rgb(${site.songPicColor})`
     ]">
       <BackgroundRender v-if="setting.backgroundImageShow === 'eplor'" :fps="music.getPlayState ? setting.fps : 0"
         :flowSpeed="music.getPlayState ? (setting.dynamicFlowSpeed ? dynamicFlowSpeed : setting.flowSpeed) : 0"

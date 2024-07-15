@@ -1,6 +1,6 @@
 <template>
   <div class="cover">
-    <div :class="['pic', !music.getPlayState ? 'pic-pause' : '']">
+    <div :class="['pic', !music.getPlayState ? 'pause' : '', music.getLoadingState ? 'loading' : '']">
       <img class="album" :src="music.getPlaySongData
         ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
         '?param=1024y1024'
@@ -72,8 +72,14 @@
         <n-icon v-else class="dislike" size="20" :style="!user.userLogin ? 'opacity: 0.2;pointer-events: none;' : null"
           :component="ThumbDownRound" @click="music.setFmDislike(music.getPersonalFmData.id)" />
         <div class="play-state">
-          <n-icon size="50" :component="music.getPlayState ? PauseRound : PlayArrowRound"
-            @click.stop="music.setPlayState(!music.getPlayState)" />
+          <n-button :loading="music.getLoadingState" secondary circle :keyboard="false" :focusable="false">
+            <template #icon>
+              <Transition name="fade" mode="out-in">
+                <n-icon size="42" :component="music.getPlayState ? PauseRound : PlayArrowRound"
+                  @click.stop="music.setPlayState(!music.getPlayState)" />
+              </Transition>
+            </template>
+          </n-button>
         </div>
         <n-icon class="next" size="30" :component="SkipNextRound" @click.stop="music.setPlaySongIndex('next')" />
         <n-icon class="comment" size="18" :component="MessageFilled" @click="
@@ -174,11 +180,17 @@ const volumeMute = () => {
     width: 50vh;
     height: 50vh;
     z-index: 1;
-    transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+      opacity 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    &-pause {
+    &.pause {
       transform: scale(0.9);
+    }
 
+    &.loading {
+      transform: scale(0.9);
+      filter: opacity(0.2) grayscale(0.8);
     }
 
     // overflow: hidden;
@@ -253,7 +265,7 @@ const volumeMute = () => {
           font-size: 2vh;
           font-size: 15px;
           width: 100%;
-          color: #ffffffcc;
+          color: var(--main-cover-color);
 
           @media (max-width: 1200px) {
             font-size: 14px;
@@ -280,7 +292,7 @@ const volumeMute = () => {
               white-space: nowrap;
 
               .name {
-                color: #ffffffcc;
+                color: var(--main-cover-color);
 
                 &:hover {
                   color: #fff;
@@ -328,7 +340,7 @@ const volumeMute = () => {
           border-radius: 25px;
 
           .vue-slider-process {
-            background-color: #fff;
+            background-color: var(--main-cover-color);
           }
 
           .vue-slider-dot {
@@ -342,13 +354,18 @@ const volumeMute = () => {
           }
 
           .vue-slider-dot-tooltip-inner {
-            background-color: white;
+            background-color: var(--main-cover-color);
             backdrop-filter: blur(2px);
             border: none
           }
 
           .vue-slider-dot-tooltip-text {
-            color: black;
+            color: var(--main-cover-color);
+          }
+
+          .vue-slider-dot-handle {
+            background-color: var(--main-cover-color);
+            backdrop-filter: blur(2px);
           }
         }
       }
@@ -362,12 +379,25 @@ const volumeMute = () => {
       justify-content: center;
 
       .play-state {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        --n-width: 42px;
+        --n-height: 42px;
+        color: var(--main-cover-color);
+        margin: 0 12px;
+        transition:
+          background-color 0.3s,
+          transform 0.3s;
 
         .n-icon {
-          padding: 0;
+          transition: opacity 0.1s ease-in-out;
+          color: var(--main-cover-color);
+        }
+
+        &:hover {
+          transform: scale(1.1);
+        }
+
+        &:active {
+          transform: scale(1);
         }
       }
 

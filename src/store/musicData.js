@@ -92,6 +92,10 @@ const useMusicDataStore = defineStore("musicData", {
     getPersonalFmData(state) {
       return state.persistData.personalFmData;
     },
+    // 获取是否正在加载数据
+    getLoadingState(state) {
+      return state.isLoadingSong;
+    },
     // 获取每日推荐
     getDailySongs(state) {
       return state.dailySongsData;
@@ -332,7 +336,8 @@ const useMusicDataStore = defineStore("musicData", {
           (value.currentTime / (value.duration / 100)).toFixed(2)
         );
       }
-      if (this.persistData.playSongTime.barMoveDistance) {
+
+      if (!Number.isNaN(this.persistData.playSongTime.barMoveDistance)) {
         // 歌曲播放进度转换
         this.persistData.playSongTime.songTimePlayed = getSongPlayingTime(
           (value.duration / 100) * this.persistData.playSongTime.barMoveDistance
@@ -385,7 +390,7 @@ const useMusicDataStore = defineStore("musicData", {
       // 如果 $player 未定义，返回 false
       if (typeof $player === "undefined") return false;
       // 停止播放当前歌曲
-      soundStop($player);
+      soundStop($player)
       // 根据播放模式设置加载状态
       if (this.persistData.playSongMode !== "single") {
         this.isLoadingSong = true;

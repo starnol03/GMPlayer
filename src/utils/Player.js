@@ -84,20 +84,18 @@ export const createSound = (src, autoPlay = true) => {
     sound?.on("play", () => {
       if (timeupdateInterval) {
         clearInterval(timeupdateInterval); // 清除之前的定时器
-        music.isLoadingSong = true
       }
       const playSongData = music.getPlaySongData;
       if (!Object.keys(playSongData).length) {
         $message.error(getLanguageData("songLoadError"));
         return false;
       }
-      
+
       const songName = playSongData?.name;
       const songArtist = playSongData.artist[0]?.name;
 
       testNumber = 0;
       music.setPlayState(true);
-      music.isLoadingSong = false
 
       // 播放通知
       if (typeof $message !== "undefined" && songArtist !== null) {

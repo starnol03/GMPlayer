@@ -7,6 +7,8 @@ const useSiteDataStore = defineStore("siteData", {
       siteTitle: import.meta.env.VITE_SITE_TITLE,
       // 封面主题色
       songPicColor: "rgb(128,128,128)",
+      // 封面渐变色
+      songPicGradient: "linear-gradient(-45deg, #666, #fff)",
       // 搜索框激活状态
       searchInputActive: false,
     };

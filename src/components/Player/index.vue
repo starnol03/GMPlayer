@@ -323,8 +323,8 @@ import VueSlider from "vue-slider-component";
 import AddPlaylist from "@/components/DataModal/AddPlaylist.vue";
 import PlayListDrawer from "@/components/DataModal/PlayListDrawer.vue";
 import AllArtists from "@/components/DataList/AllArtists.vue";
-import ColorThief from "colorthief";
 import BigPlayer from "./BigPlayer.vue";
+import { getCoverColor } from '@/utils/getCoverColor'
 import "vue-slider-component/theme/default.css";
 
 const { t } = useI18n();
@@ -487,25 +487,12 @@ const songChange = debounce(500, (val) => {
 });
 
 // 获取封面图主色
-const getPicColor = (url) => {
+const getPicColor = async (url) => {
   if (!url) return false;
-  const imgUrl = url.replace(/^http:/, "https:") + "?param=50y50";
-  const img = new Image();
-  fetch(imgUrl)
-    .then((res) => res.blob())
-    .then((blob) => {
-      img.src = URL.createObjectURL(blob);
-      img.addEventListener("load", async () => {
-        const colorThief = new ColorThief();
-        const color = await colorThief.getColor(img);
-        console.log(`当前封面主色：rgb(${color.join(",")})`);
-        site.songPicColor = `rgb(${color.join(",")})`;
-      });
-    })
-    .catch((err) => {
-      console.error("图像处理出错：" + err);
-      site.songPicColor = "rgb(128,128,128)";
-    });
+  const color = await getCoverColor(url)
+
+  site.songPicColor = `rgb(${color.accentColor})`;
+  site.songPicGradient = color.gradient;
 };
 
 onMounted(() => {

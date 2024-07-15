@@ -3,6 +3,7 @@
   <div v-if="music.getPlaySongLyric.lrc[0]" :class="[
     setting.playerStyle === 'cover' ? 'lrc-all cover' : 'lrc-all record',
     setting.lyricsBlock === 'center' ? 'center' : 'top',
+    music.getLoadingState ? 'loading' : ''
   ]">
     <div class="placeholder" :id="!music.getPlaySongLyric.hasYrc || !setting.showYrc ? 'lrc-1' : 'yrc-1'
       " :style="setting.lyricsPosition === 'center'
@@ -15,6 +16,8 @@
     <template v-if="!music.getPlaySongLyric.hasYrc || !setting.showYrc">
       <div class="lrc" v-for="(item, index) in music.getPlaySongLyric.lrc" :class="{
         on: music.getPlaySongLyricIndex == index,
+        down: music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex == index - 1,
+        up: music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex == index + 1,
         blur: setting.lyricsBlur,
       }" :style="{
         marginBottom: setting.lyricsFontSize - 1.6 + 'vh',
@@ -43,6 +46,8 @@
     <template v-else>
       <div class="yrc" v-for="(item, index) in music.getPlaySongLyric.yrc" :class="{
         on: music.getPlaySongLyricIndex === index,
+        down: music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex == index - 1,
+        up: music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex == index + 1,
         blur: setting.lyricsBlur,
       }" :style="{
         marginBottom: setting.lyricsFontSize - 1.6 + 'vh',
@@ -88,7 +93,6 @@
 </template>
 
 <script setup>
-// TODO: 辉光效果
 import { musicStore, settingStore } from "@/store";
 import CountDown from "./CountDown.vue";
 
@@ -167,6 +171,17 @@ const lrcTextClick = (time) => {
   max-width: 52vh;
   overflow: auto;
   padding: 0 10px;
+  opacity: 1;
+  transform: translateZ(0) scale(1);
+  will-change: auto;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  &.loading {
+    opacity: 0 !important;
+    transform: scale(0.8);
+  }
 
   .placeholder {
     width: 100%;
@@ -185,7 +200,7 @@ const lrcTextClick = (time) => {
 
   .lrc,
   .yrc {
-    will-change: filter, transform;
+    will-change: filter, opacity, transform;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -193,9 +208,9 @@ const lrcTextClick = (time) => {
     box-sizing: border-box;
     border-radius: 8px;
     opacity: 0.3;
-    transform: scale(0.9) translateZ(0);
+    transform: scale(0.75);
     transform-origin: left bottom;
-    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
       opacity 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
       filter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     cursor: pointer;
@@ -265,6 +280,11 @@ const lrcTextClick = (time) => {
       transition: opacity 0.3s ease;
     }
 
+    &.up,
+    &.down {
+      transform: scale(0.9);
+    }
+
     &.on {
       opacity: 1;
       transform: scale(1);
@@ -281,7 +301,7 @@ const lrcTextClick = (time) => {
     }
 
     &:hover {
-      transform: scale(1.02);
+      transform: scale(1.1);
     }
 
     &::before {

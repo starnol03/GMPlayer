@@ -1,11 +1,12 @@
 <template>
   <Transition name="up">
     <div v-if="music.showBigPlayer" class="bplayer" :style="[
-      music.getPlaySongData && setting.backgroundImageShow === 'blur' && setting.backgroundImageShow !== 'eplor' ? 'background-image: url(' +
+      music.getPlaySongData && setting.backgroundImageShow === 'blur' ? 'background-image: url(' +
         music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
         '?param=50y50)'
         : '',
-      `backgroundColor: ${site.songPicColor}`,
+      `background: ${site.songPicGradient}`,
+      `--main-cover-color: ${site.songPicColor}`
     ]">
       <BackgroundRender v-if="setting.backgroundImageShow === 'eplor'" :fps="music.getPlayState ? setting.fps : 0"
         :flowSpeed="music.getPlayState ? (setting.dynamicFlowSpeed ? dynamicFlowSpeed : setting.flowSpeed) : 0"
@@ -51,9 +52,9 @@
                 <div class="name text-hidden">
                   <span>{{
                     music.getPlaySongData
-                      ? music.getPlaySongData.name
-                      : $t("other.noSong")
-                  }}</span>
+                    ? music.getPlaySongData.name
+                    : $t("other.noSong")
+                    }}</span>
                   <span v-if="music.getPlaySongData && music.getPlaySongData.alia">{{ music.getPlaySongData.alia[0]
                     }}</span>
                 </div>
@@ -82,10 +83,17 @@
                   <n-icon v-else class="dislike" :component="ThumbDownRound"
                     @click="music.setFmDislike(music.getPersonalFmData.id)" />
                   <div class="play-state">
-                    <n-icon :component="music.getPlayState ? PauseCircleFilled : PlayCircleFilled
-                      " @click.stop="music.setPlayState(!music.getPlayState)" />
+                    <n-button :loading="music.getLoadingState" secondary circle :keyboard="false" :focusable="false">
+                      <template #icon>
+                        <Transition name="fade" mode="out-in">
+                          <n-icon size="42" :component="music.getPlayState ? PauseRound : PlayArrowRound"
+                            @click.stop="music.setPlayState(!music.getPlayState)" />
+                        </Transition>
+                      </template>
+                    </n-button>
                   </div>
-                  <n-icon class="next" :component="SkipNextRound" @click.stop="music.setPlaySongIndex('next')" />
+                  <n-icon class="next" size="30" :component="SkipNextRound"
+                    @click.stop="music.setPlaySongIndex('next')" />
                 </div>
               </div>
             </div>
@@ -102,18 +110,17 @@
 
 <script setup>
 import {
+  PlayArrowRound,
   KeyboardArrowDownFilled,
   FullscreenRound,
   FullscreenExitRound,
   SettingsRound,
-  PlayCircleFilled,
-  PauseCircleFilled,
+  PauseRound,
   SkipNextRound,
   SkipPreviousRound,
   ThumbDownRound,
 } from "@vicons/material";
-import { PlayCycle, PlayOnce, ShuffleOne } from "@icon-park/vue-next";
-import { musicStore, userStore, settingStore, siteStore } from "@/store";
+import { musicStore, settingStore, siteStore } from "@/store";
 import { useRouter } from "vue-router";
 import { setSeek } from "@/utils/Player";
 import PlayerRecord from "./PlayerRecord.vue";
@@ -125,7 +132,7 @@ import screenfull from "screenfull";
 import VueSlider from "vue-slider-component";
 import "vue-slider-component/theme/default.css";
 import BackgroundRender from "@/libs/apple-music-like/BackgroundRender.vue";
-import { throttle } from "throttle-debounce";
+import { throttle } from "throttle-debounce"
 import { analyzeAudioIntensity } from "../../utils/fftIntensityAnalyze";
 
 const router = useRouter();
@@ -185,7 +192,7 @@ const screenfullChange = () => {
   }
 };
 
-// 前往评论
+// 前往评论 | 暂时废弃
 const toComment = () => {
   music.setBigPlayerState(false);
   router.push({
@@ -231,7 +238,7 @@ const changePwaColor = () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   nextTick().then(() => {
     // 滚动歌词
     lyricsScroll(music.getPlaySongLyricIndex);
@@ -311,7 +318,7 @@ watch(
   height: 100%;
   z-index: 9999;
   overflow: hidden;
-  color: #ffffff;
+  color: var(--main-cover-color);
   background-repeat: no-repeat;
   background-size: 150% 150%;
   background-position: center;
@@ -565,12 +572,13 @@ watch(
               transform: translateY(-1px);
               cursor: pointer;
 
+
               :deep(.vue-slider-rail) {
                 background-color: #ffffff20;
                 border-radius: 25px;
 
                 .vue-slider-process {
-                  background-color: #fff;
+                  background-color: var(--main-cover-color) !important;
                 }
 
                 .vue-slider-dot {
@@ -584,9 +592,13 @@ watch(
                 }
 
                 .vue-slider-dot-tooltip-inner {
-                  background-color: white;
+                  background-color: var(--main-cover-color) !important;
                   backdrop-filter: blur(2px);
                   border: none
+                }
+
+                .vue-slider-dot-handle {
+                  background-color: var(--main-cover-color) !important
                 }
 
                 .vue-slider-dot-tooltip-text {
@@ -610,7 +622,6 @@ watch(
               cursor: pointer;
               padding: 4px;
               border-radius: 50%;
-              transform: scale(1);
               transition: all 0.3s;
 
               &:hover {
@@ -627,14 +638,17 @@ watch(
             }
 
             .play-state {
-              width: 46px;
+              --n-width: 42px;
+              --n-height: 42px;
+              color: var(--main-cover-color);
               margin: 0 12px;
-              cursor: pointer;
-              transform: scale(1.5);
-              transition: all 0.3s;
+              transition:
+                background-color 0.3s,
+                transform 0.3s;
 
-              &:hover {
-                transform: scale(1.3);
+              .n-icon {
+                transition: opacity 0.1s ease-in-out;
+                color: var(--main-cover-color);
               }
 
               &:active {
@@ -648,7 +662,6 @@ watch(
           }
 
           .n-icon {
-            margin-right: 8px;
             font-size: 24px;
             cursor: pointer;
             padding: 8px;

@@ -92,6 +92,10 @@ const useMusicDataStore = defineStore("musicData", {
     getPersonalFmData(state) {
       return state.persistData.personalFmData;
     },
+    // 获取是否正在加载数据
+    getLoadingState(state) {
+      return state.isLoadingSong;
+    },
     // 获取每日推荐
     getDailySongs(state) {
       return state.dailySongsData;

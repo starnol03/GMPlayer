@@ -10,7 +10,7 @@
           playlist: music.showPlayList,
           search: site.searchInputActive,
         }">
-          <n-back-top :bottom="music.getPlaylists[0] && music.showPlayBar ? 100 : 40" style="transition: all 0.3s" />
+          <n-back-top :bottom="music.getPlaylists[0] && music.showPlayBar ? 100 : 40" style="transition: all 0.3s; z-index: 999" />
           <router-view v-slot="{ Component }">
             <keep-alive>
               <Transition name="scale" mode="out-in">

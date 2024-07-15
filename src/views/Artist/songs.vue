@@ -39,7 +39,8 @@ const getArtistSongsData = (id) => {
 
       const songId = v.al.id
       const album = ref([])
-      // hmm...multiple request, that sucks
+      
+      // 此处获取到的歌曲均无 album.picUrl 参数，需要手动获取整个 album 数据替换
       getAlbum(songId).then((res) => {
         res = res.album
         album.value.push({
@@ -55,7 +56,7 @@ const getArtistSongsData = (id) => {
           num: i + 1,
           name: v.name,
           artist: v.ar,
-          album: toRaw(album.value)[0],
+          album: toRaw(album.value.reverse())[0],
           alia: v.alia,
           time: getSongTime(v.dt),
           fee: v.fee,
@@ -63,7 +64,7 @@ const getArtistSongsData = (id) => {
           mv: v.mv ? v.mv : null,
         });
       })
-      console.log(artistData)
+      // console.log(artistData)
     });
   });
 };

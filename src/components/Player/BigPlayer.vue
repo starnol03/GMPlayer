@@ -61,16 +61,16 @@
           <div class="right">
             <Transition name="lrc">
               <div class="lrcShow" v-if="
-              music.getPlaySongLyric.lrc[0] &&
-              music.getPlaySongLyric.lrc.length > 4
-            ">
+                music.getPlaySongLyric.lrc[0] &&
+                music.getPlaySongLyric.lrc.length > 4
+              ">
                 <div class="data" v-show="setting.playerStyle === 'record'">
                   <div class="name text-hidden">
                     <span>{{
                       music.getPlaySongData
-                      ? music.getPlaySongData.name
-                      : $t("other.noSong")
-                      }}</span>
+                        ? music.getPlaySongData.name
+                        : $t("other.noSong")
+                    }}</span>
                     <span v-if="music.getPlaySongData && music.getPlaySongData.alia">{{ music.getPlaySongData.alia[0]
                       }}</span>
                   </div>
@@ -82,15 +82,15 @@
                   </div>
                 </div>
                 <RollingLyrics @mouseenter="
-                lrcMouseStatus = setting.lrcMousePause ? true : false
-                " @mouseleave="lrcAllLeave" @lrcTextClick="lrcTextClick" />
+                  lrcMouseStatus = setting.lrcMousePause ? true : false
+                  " @mouseleave="lrcAllLeave" @lrcTextClick="lrcTextClick" />
                 <div :class="menuShow ? 'menu show' : 'menu'" v-show="setting.playerStyle === 'record'">
                   <div class="time">
                     <span>{{ music.getPlaySongTime.songTimePlayed }}</span>
                     <vue-slider v-model="music.getPlaySongTime.barMoveDistance" @drag-start="music.setPlayState(false)"
                       @drag-end="sliderDragEnd" @click.stop="
-                      songTimeSliderUpdate(music.getPlaySongTime.barMoveDistance)
-                      " :tooltip="'none'" />
+                        songTimeSliderUpdate(music.getPlaySongTime.barMoveDistance)
+                        " :tooltip="'none'" />
                     <span>{{ music.getPlaySongTime.songTimeDuration }}</span>
                   </div>
                   <div class="control">
@@ -346,7 +346,7 @@ watch(
   display: flex;
   justify-content: center;
 
-.overlay {
+  .overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -505,6 +505,7 @@ watch(
 
         .right {
           opacity: 0 !important;
+          display: none;
         }
       }
     }
@@ -570,7 +571,7 @@ watch(
       transform: translateX(0);
       flex: 1;
       height: 100%;
-      padding-left: 2rem;
+      padding-left: 2vw;
 
       .lrcShow {
         height: 100%;

@@ -5,6 +5,7 @@ import {
   Hct,
   Score,
 } from "@material/material-color-utilities";
+import { settingStore } from '@/store'
 import { chunk } from "./chunk";
 
 /**
@@ -342,7 +343,6 @@ export const getCoverColor = (coverSrc) => {
         console.log("图片加载完成：", gradient);
         // 获取图片主色
         const accentColor = calcAccentColor(image);
-        console.log("图片主色：", accentColor)
         resolve({ gradient, accentColor });
       };
     } catch (error) {
@@ -357,6 +357,7 @@ export const getCoverColor = (coverSrc) => {
  * @param {HTMLImageElement} dom - 包含图像的 DOM 元素
  */
 const calcAccentColor = (dom) => {
+  const settings = settingStore()
   // 创建一个用于提取颜色的 canvas
   const canvas = document.createElement("canvas");
   canvas.width = 50;
@@ -384,7 +385,7 @@ const calcAccentColor = (dom) => {
   const ranked = Score.score(new Map(sortedQuantizedColors.slice(0, 50)));
   const top = ranked[0];
   const theme = themeFromSourceColor(top);
-  const variant = "secondary"
+  const variant = settings.colorType;
   return getAccentColor(
     Hct.from(theme.palettes[variant].hue, theme.palettes[variant].chroma, 90).toInt(),
   )

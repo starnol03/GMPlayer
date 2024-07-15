@@ -138,6 +138,36 @@
       </div>
       <n-select class="set" v-model:value="lyricsBlock" :options="lyricsBlockOptions" />
     </n-card>
+    <n-card class="set-item">
+      <div class="name">
+        <div class="dev">
+          沉浸式播放器
+          <n-tag round :bordered="false" size="small" type="warning">
+            {{ $t("setting.dev") }}
+            <template #icon>
+              <n-icon :component="Code" />
+            </template>
+          </n-tag>
+        </div>
+        <span class="tip">使用动态取色算法，使播放器中的文字将会与封面同色</span>
+      </div>
+      <n-switch v-model:value="immersivePlayer" :round="false" />
+    </n-card>
+    <n-card class="set-item" v-if="immersivePlayer">
+      <div class="name">
+        <div class="dev">
+          沉浸式播放器取色类别
+          <n-tag round :bordered="false" size="small" type="warning">
+            {{ $t("setting.dev") }}
+            <template #icon>
+              <n-icon :component="Code" />
+            </template>
+          </n-tag>
+        </div>
+        <span class="tip">调节取色所使用的类型</span>
+      </div>
+      <n-select class="set" v-model:value="colorType" :options="colorTypeOptions" :disabled="!immersivePlayer" />
+    </n-card>
     <n-card class="set-item" :content-style="{
       flexDirection: 'column',
       alignItems: 'flex-start',
@@ -198,6 +228,7 @@ const {
   playerStyle,
   fps,
   flowSpeed,
+  immersivePlayer,
   musicFrequency,
   renderScale,
   albumImageUrl,
@@ -212,6 +243,7 @@ const {
   backgroundImageShow,
   countDownShow,
   showYrcAnimation,
+  colorType,
   showYrcTransform,
 } = storeToRefs(setting);
 console.log('SETTING', fps)
@@ -240,6 +272,30 @@ const lyricsBlockOptions = [
     value: "center",
   },
 ];
+
+// 取色类别
+const colorTypeOptions = [
+  {
+    label: '中性',
+    value: 'neutral',
+  },
+  {
+    label: '中性变体',
+    value: 'neutralVariant',
+  },
+  {
+    label: '主要',
+    value: 'primary',
+  },
+  {
+    label: '次要',
+    value: 'secondary',
+  },
+  {
+    label: '次次要',
+    value: 'tertiary',
+  },
+]
 
 // 播放器样式
 const playerStyleOptions = [

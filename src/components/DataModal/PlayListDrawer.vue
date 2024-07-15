@@ -1,16 +1,7 @@
 <template>
-  <n-drawer
-    class="playlist-drawer"
-    v-model:show="playListShow"
-    :z-index="1"
-    :width="400"
-    :trap-focus="false"
-    :block-scroll="false"
-    placement="right"
-    to="#mainContent"
-    @after-leave="music.showPlayList = false"
-    @mask-click="music.showPlayList = false"
-  >
+  <n-drawer class="playlist-drawer" v-model:show="playListShow" :z-index="1" :trap-focus="false"
+    :block-scroll="false" placement="right" to="#mainContent" @after-leave="music.showPlayList = false"
+    @mask-click="music.showPlayList = false">
     <n-drawer-content :native-scrollbar="false" closable>
       <template #header>
         <div class="text">
@@ -24,54 +15,31 @@
       </template>
       <Transition mode="out-in">
         <div v-if="music.getPlaylists[0]">
-          <n-card
-            hoverable
-            :class="
-              index === music.persistData.playSongIndex ? 'songs play' : 'songs'
-            "
-            :id="'playlist' + index"
-            :content-style="{
+          <n-card hoverable :class="index === music.persistData.playSongIndex ? 'songs play' : 'songs'
+            " :id="'playlist' + index" :content-style="{
               padding: '8px',
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
-            }"
-            v-for="(item, index) in music.getPlaylists"
-            :key="item"
-            @click="changeIndex(index)"
-          >
+            }" v-for="(item, index) in music.getPlaylists" :key="item" @click="changeIndex(index)">
             <div class="left">
-              <n-text
-                v-if="index !== music.persistData.playSongIndex"
-                :depth="3"
-                class="num"
-              >
+              <n-text v-if="index !== music.persistData.playSongIndex" :depth="3" class="num">
                 {{ index + 1 }}
               </n-text>
               <div v-else class="bar">
-                <div
-                  v-for="item in 3"
-                  :key="item"
-                  class="line"
-                  :style="{
-                    animationDelay: `0.${item * item}s`,
-                    animationPlayState: music.getPlayState
-                      ? 'running'
-                      : 'paused',
-                    height: `${Math.floor(Math.random() * 7) + 10}px`,
-                  }"
-                />
+                <div v-for="item in 3" :key="item" class="line" :style="{
+                  animationDelay: `0.${item * item}s`,
+                  animationPlayState: music.getPlayState
+                    ? 'running'
+                    : 'paused',
+                  height: `${Math.floor(Math.random() * 7) + 10}px`,
+                }" />
               </div>
             </div>
             <div class="right">
               <div class="name text-hidden">{{ item.name }}</div>
               <AllArtists class="text-hidden" :artistsData="item.artist" />
-              <n-icon
-                class="remove"
-                size="18"
-                :component="DeleteFour"
-                @click.stop="music.removeSong(index)"
-              />
+              <n-icon class="remove" size="18" :component="DeleteFour" @click.stop="music.removeSong(index)" />
             </div>
           </n-card>
         </div>
@@ -145,7 +113,16 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
+.n-drawer-mask {
+  backdrop-filter: blur(20px);
+}
 .playlist-drawer {
+  background-color: transparent;
+  box-shadow: none;
+  width: 400px !important;
+  border-radius: 12px 0 0 12px;
+  transition: width 0.3s;
+
   .v-enter-active,
   .v-leave-active {
     transition: opacity 0.3s ease;
@@ -155,28 +132,35 @@ onBeforeUnmount(() => {
   .v-leave-to {
     opacity: 0;
   }
+
   .text {
     display: flex;
     align-items: center;
+
     .num {
       font-size: 14px;
+
       &::before {
         content: "-";
         margin: 0 6px;
       }
     }
   }
+
   .songs {
     border-radius: 8px;
     cursor: pointer;
     margin-bottom: 12px;
     transition: all 0.3s;
+
     &:nth-last-of-type(1) {
       margin-bottom: 0;
     }
+
     &:active {
       transform: scale(0.98);
     }
+
     &:hover {
       .n-card__content {
         .right {
@@ -186,21 +170,26 @@ onBeforeUnmount(() => {
         }
       }
     }
+
     &.play {
       background-color: var(--main-second-color);
       border-color: var(--main-color);
+
       a,
       span,
       div,
       .n-icon {
         color: var(--main-color);
       }
+
       :deep(span) {
         color: var(--main-color);
       }
+
       .right {
         .remove {
           color: var(--main-color);
+
           &:hover {
             background-color: var(--n-action-color);
           }
@@ -214,12 +203,14 @@ onBeforeUnmount(() => {
       align-items: center;
       justify-content: center;
       margin-right: 12px;
+
       .bar {
         display: flex;
         justify-content: space-evenly;
         align-items: flex-end;
         width: 20px;
         height: 20px;
+
         .line {
           width: 3px;
           height: 16px;
@@ -228,19 +219,23 @@ onBeforeUnmount(() => {
           transition: all 0.3s;
           animation: lineMove 1s ease-in-out infinite;
         }
+
         @keyframes lineMove {
           0% {
             height: 16px;
           }
+
           50% {
             height: 10px;
           }
+
           100% {
             height: 16px;
           }
         }
       }
     }
+
     .right {
       flex: 1;
       position: relative;
@@ -249,14 +244,17 @@ onBeforeUnmount(() => {
       align-items: flex-start;
       justify-content: center;
       padding-right: 42px;
+
       .name {
         pointer-events: none;
       }
+
       .artists {
         opacity: 0.8;
         font-size: 13px;
         pointer-events: none;
       }
+
       .remove {
         position: absolute;
         border-radius: 8px;
@@ -265,6 +263,7 @@ onBeforeUnmount(() => {
         transition: all 0.3s;
         color: #999;
         padding: 6px;
+
         &:hover {
           color: var(--main-color);
           background-color: var(--n-border-color);

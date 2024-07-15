@@ -73,6 +73,10 @@ const useSettingDataStore = defineStore("settingData", {
       language: "zh-CN",
       // 底栏点击展开播放器
       bottomClick: false,
+      // 沉浸式播放器,
+      immersivePlayer: true,
+      // 沉浸式播放器取色类型,
+      colorType: 'secondary',
     };
   },
   getters: {

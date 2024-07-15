@@ -8,6 +8,7 @@ import router from "@/router";
 
 // 全局样式
 import "@/style/global.scss";
+import '@/style/animate.scss'
 
 const app = createApp(App);
 

@@ -79,41 +79,49 @@ export const createSound = (src, autoPlay = true) => {
         }, 3000);
       }
     });
+
     // 播放事件
     sound?.on("play", () => {
-      if (!Object.keys(music.getPlaySongData).length) {
+      if (timeupdateInterval) {
+        clearInterval(timeupdateInterval); // 清除之前的定时器
+        music.isLoadingSong = true
+      }
+      const playSongData = music.getPlaySongData;
+      if (!Object.keys(playSongData).length) {
         $message.error(getLanguageData("songLoadError"));
         return false;
       }
+      
+      const songName = playSongData?.name;
+      const songArtist = playSongData.artist[0]?.name;
+
       testNumber = 0;
       music.setPlayState(true);
-      const songName = music.getPlaySongData?.name;
-      const songArtist = music.getPlaySongData.artist[0]?.name;
+
       // 播放通知
       if (typeof $message !== "undefined" && songArtist !== null) {
-        $message.info(songName + " - " + songArtist, {
-          icon: () =>
-            h(NIcon, null, {
-              default: () => h(MusicNoteFilled),
-            }),
+        $message.info(`${songName} - ${songArtist}`, {
+          icon: () => h(NIcon, null, {
+            default: () => h(MusicNoteFilled),
+          }),
         });
       } else {
         $message.warning(getLanguageData("songNotDetails"));
       }
-      console.log("开始播放：" + songName + " - " + songArtist);
+
+      console.log(`开始播放：${songName} - ${songArtist}`);
       setMediaSession(music);
+
       // 获取播放器信息
       timeupdateInterval = setInterval(() => checkAudioTime(sound, music), 250);
+
       // 写入播放历史
-      music.setPlayHistory(music.getPlaySongData);
+      music.setPlayHistory(playSongData);
+
       // 播放时页面标题
-      window.document.title =
-        music.getPlaySongData.name +
-        " - " +
-        music.getPlaySongData.artist[0].name +
-        " - " +
-        import.meta.env.VITE_SITE_TITLE;
+      window.document.title = `${songName} - ${songArtist} - ${import.meta.env.VITE_SITE_TITLE}`;
     });
+
     // 暂停事件
     sound?.on("pause", () => {
       clearInterval(timeupdateInterval);

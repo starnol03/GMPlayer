@@ -84,7 +84,6 @@ export const createSound = (src, autoPlay = true) => {
     sound?.on("play", () => {
       if (timeupdateInterval) {
         clearInterval(timeupdateInterval); // 清除之前的定时器
-        music.isLoadingSong = true
       }
       const playSongData = music.getPlaySongData;
       if (!Object.keys(playSongData).length) {

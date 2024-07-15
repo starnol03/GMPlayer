@@ -23,11 +23,8 @@
       },
       "externalBin": [],
       "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
+        "../public/images/logo/favicon.png",
+        "../public/favicon.ico"
       ],
       "identifier": "com.gbclstudio.gmplayer",
       "longDescription": "",
@@ -56,10 +53,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
+        "height": 800,
         "resizable": true,
         "title": "GMPlayer",
-        "width": 800
+        "width": 1200
       }
     ]
   }

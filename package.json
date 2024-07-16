@@ -17,6 +17,7 @@
     "artplayer": "^5.1.6",
     "axios": "^1.7.2",
     "colorthief": "^2.4.0",
+    "date-fns": "^3.6.0",
     "howler": "^2.2.4",
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^3.2.1",

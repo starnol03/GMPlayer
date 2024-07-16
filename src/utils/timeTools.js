@@ -1,4 +1,5 @@
 import getLanguageData from "./getLanguageData";
+import { format } from 'date-fns';
 
 /**
  * 歌曲时长时间戳转换
@@ -6,12 +7,11 @@ import getLanguageData from "./getLanguageData";
  * @returns {string} 格式为 "mm:ss" 的字符串
  */
 export const getSongTime = (mss) => {
-  const minutes = Math.floor(mss / (1000 * 60));
-  let seconds = Math.floor((mss % (1000 * 60)) / 1000);
-  if (seconds < 10) {
-    seconds = `0${seconds}`;
-  }
-  return `${minutes}:${seconds}`;
+  const date = new Date(0);
+  date.setMilliseconds(mss);
+
+  // Format the date as mm:ss
+  return format(date, 'mm:ss');
 };
 
 /**
@@ -33,41 +33,45 @@ export const getLongTime = (mss) => {
  * @returns {string} - 转换后的时间字符串
  */
 export const getCommentTime = (t) => {
-  // 获取当前 Unix 时间戳
-  const nowDate = new Date().getTime();
-  // 获取今天 23:59:59.999 时间戳
-  const todayLast = new Date(new Date().setHours(23, 59, 59, 999)).getTime();
+  const nowDate = new Date(); // Current date object
+  const nowTime = nowDate.getTime(); // Current timestamp
 
-  // 将传入的时间戳转换为 Date 对象
-  const userDate = new Date(Number(t));
-  // 获取评论时间的小时和分钟数，并进行补零处理
-  const UH =
-    userDate.getHours() < 10 ? `0${userDate.getHours()}` : userDate.getHours();
-  const Um =
-    userDate.getMinutes() < 10
-      ? `0${userDate.getMinutes()}`
-      : userDate.getMinutes();
-  // 判断时间差
-  if (nowDate - t <= 60000) {
-    return getLanguageData("just");
-  } else if (nowDate - t > 60000 && nowDate - t <= 3600000) {
-    const pastTimeUnix = nowDate - t;
-    const pastTime = new Date(Number(pastTimeUnix));
-    return `${pastTime.getMinutes("yesterday")} ${getLanguageData(
-      "minutesAgo"
-    )}`;
-  } else if (todayLast - t > 3600000 && todayLast - t <= 86400000) {
-    return `${UH}:${Um}`;
-  } else if (todayLast - t > 86400000 && todayLast - t <= 172800000) {
-    return `${getLanguageData("yesterday")} ${UH}:${Um}`;
-  } else if (todayLast - t > 172800000 && todayLast - t <= 31557600000) {
-    return `${userDate.getMonth() + 1}${getLanguageData(
-      "month"
-    )}${userDate.getDate()}${getLanguageData("day")}`;
-  } else {
-    return `${userDate.getFullYear()}${getLanguageData("year")}${
-      userDate.getMonth() + 1
-    }${getLanguageData("month")}${userDate.getDate()}${getLanguageData("day")}`;
+  // Calculate today's 23:59:59.999 timestamp
+  const todayLast = new Date(nowDate.setHours(23, 59, 59, 999)).getTime();
+
+  // Create Date object from the provided timestamp
+  const userDate = new Date(t);
+
+  // Extract hours and minutes with zero-padding
+  const UH = userDate.getHours().toString().padStart(2, "0");
+  const Um = userDate.getMinutes().toString().padStart(2, "0");
+
+  // Calculate time difference in milliseconds
+  const timeDiff = nowTime - t;
+  const minutes = Math.floor(timeDiff / 60000);
+
+  // Constants for language data
+  const just = getLanguageData("just");
+  const minutesAgo = getLanguageData("minutesAgo");
+  const yesterday = getLanguageData("yesterday");
+  const month = getLanguageData("month");
+  const day = getLanguageData("day");
+  const year = getLanguageData("year");
+
+  // Logic to determine and return formatted time string
+  switch (true) {
+    case timeDiff <= 60000:
+      return just;
+    case timeDiff <= 3600000:
+      return `${minutes} ${minutesAgo}`;
+    case t >= todayLast - 86400000 && t < todayLast:
+      return `${UH}:${Um}`;
+    case t >= todayLast - 172800000 && t < todayLast:
+      return `${yesterday} ${UH}:${Um}`;
+    case t >= todayLast - 31557600000 && t < todayLast:
+      return `${userDate.getMonth() + 1}${month}${userDate.getDate()}${day}`;
+    default:
+      return `${userDate.getFullYear()}${year}${userDate.getMonth() + 1}${month}${userDate.getDate()}${day}`;
   }
 };
 
@@ -78,28 +82,51 @@ export const getCommentTime = (t) => {
  */
 export const formatNumber = (num) => {
   const n = Number(num);
-  if (n === 0 || n < 10000) {
-    return n;
-  } else if (n < 100000000) {
-    const numString = (n / 10000).toFixed(1);
-    return numString.endsWith(".0")
-      ? numString.slice(0, -2) + getLanguageData("million")
-      : numString + getLanguageData("million");
-  } else {
-    const numString = (n / 100000000).toFixed(1);
-    return numString.endsWith(".0")
-      ? numString.slice(0, -2) + getLanguageData("billion")
-      : numString + getLanguageData("billion");
-  }
+  
+  // If the number is less than 10000 or zero, return as-is
+  if (n === 0 || n < 10000) return n;
+  
+  // Define formatter based on the current locale
+  const formatter = new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+
+  // Function to format the number into million or billion
+  const formatToMillionOrBillion = (number) => {
+    const million = getLanguageData("million"); // Replace with your i18n function
+    const billion = getLanguageData("billion"); // Replace with your i18n function
+    
+    if (number < 100000000) {
+      return formatter.format(number / 10000) + million;
+    } else {
+      return formatter.format(number / 100000000) + billion;
+    }
+  };
+
+  // Format based on the current locale
+  return formatToMillionOrBillion(n);
 };
 
+const memo = {};
 /**
  * 歌曲播放时间转换
  * @param {number} num 歌曲播放时间，单位为秒
  * @returns {string} 格式为 "mm:ss" 的字符串
  */
 export const getSongPlayingTime = (num) => {
+  // Check if result is memoized
+  if (memo[num]) return memo[num];
+
+  // Calculate minutes and seconds
   const minutes = String(Math.floor(num / 60)).padStart(2, "0");
   const seconds = String(Math.floor(num % 60)).padStart(2, "0");
-  return `${minutes}:${seconds}`;
+
+  // Combine minutes and seconds
+  const formattedTime = `${minutes}:${seconds}`;
+
+  // Memoize the result
+  memo[num] = formattedTime;
+
+  return formattedTime;
 };

@@ -328,6 +328,7 @@ export const Rgb2Hex = (r, g, b) => {
  * @param {string} coverSrc - 图片 URL
  */
 export const getCoverColor = (coverSrc) => {
+  coverSrc = coverSrc.replace(/^http:/, "https:");
   return new Promise((resolve, reject) => {
     try {
       const colorThief = new ColorThief();

@@ -6,7 +6,7 @@
  */
 const getCoverUrl = (url, size = null) => {
   if (!url) return "/images/pic/default.png";
-  const sizeUrl = size ? `?param=${size}y${size}` : "";
+  const sizeUrl = size ? `?param=${size}y${size}` : "?param=50y50";
   const imageUrl = url.replace(/^http:/, "https:");
   if (imageUrl.endsWith(".jpg")) {
     return imageUrl + sizeUrl;

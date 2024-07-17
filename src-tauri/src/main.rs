@@ -16,6 +16,16 @@ fn main() {
 }
 
 #[command]
+fn detect_os() -> Option<&'static str> {
+  match std::env::consts::OS {
+      "android" => Some("Android"),
+      "linux" => Some("Linux"),
+      "windows" => Some("Windows"),
+      _ => None,
+  }
+}
+
+#[command]
 fn get_chunk<T>(input: &[T], size: usize) -> ChunkedArray<T> 
 where
     T: Clone,

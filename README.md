@@ -1,6 +1,6 @@
 <div align="center">
 <img alt="logo" height="80" src="./public/images/logo/favicon.png" />
-<h2>SPlayer</h2>
+<h2>GMlayer</h2>
 <p>一个简约的在线音乐播放器</p>
 <img alt="main" src="./screenshots/main.png" />
 </div>
@@ -14,13 +14,13 @@
 > - 新增支持播放与管理本地歌曲
 
 - 本项目采用 [Vue 3](https://cn.vuejs.org/) 全家桶和 [Naïve UI](https://www.naiveui.com/) 组件库及 `SCSS` 开发
-- 目前主要以 `Web` 端为主，可能暂时不会考虑使用 `Electron` 构建客户端
+- 目前主要以 `Web` 端为主，`Tauri` 在写了在写了
 - 仅对移动端做了基础适配，**不保证功能全部可用**
 - 欢迎各位大佬指点和 `Star` 哦 😍
 
 ## 👀 Demo
 
-- [SPlayer](https://music.imsyy.top/)
+- [SPlayer](https://music.gbclstudio.cn/)
 
 ## 🎉 功能
 
@@ -52,9 +52,8 @@
 #### 待办
 
 - [ ] 电台节目支持
-- [ ] 歌词页面进一步完善
+- [ ] 移动端适配与 Tauri 跨平台
 - [ ] 发表评论
-- [ ] 重构（写成屎山了） 🤣
 
 ## 😍 Screenshots
 
@@ -115,30 +114,18 @@ VITE_MUSIC_API = "your api url";
 
 ```bash
 pnpm install
-# 或者
-yarn install
-# 或者
-npm install
 ```
 
 ### 开发
 
 ```bash
 pnpm dev
-# 或者
-yarn dev
-# 或者
-npm dev
 ```
 
 ### 构建
 
 ```bash
 pnpm build
-# 或者
-yarn build
-# 或者
-npm build
 ```
 
 构建完成后可将生成的 `dist` 文件夹内的文件上传至服务器
@@ -152,6 +139,7 @@ npm build
 - [UnblockNeteaseMusic](https://github.com/UnblockNeteaseMusic/server)
 - [BlurLyric](https://github.com/Project-And-Factory/BlurLyric)
 - [Vue-mmPlayer](https://github.com/maomao1996/Vue-mmPlayer)
+- [原作: SPlayer](https://github.com/imsyy/SPlayer)
 
 ## 📜 开源许可
 

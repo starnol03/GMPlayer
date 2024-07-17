@@ -10,13 +10,12 @@ import router from "@/router";
 import "@/style/global.scss";
 import '@/style/animate.scss'
 
-const app = createApp(App);
-
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
 
-app.use(pinia);
-app.use(router);
+const app = createApp(App)
+  .use(pinia)
+  .use(router);
 
 // 国际化
 useI18n(app);

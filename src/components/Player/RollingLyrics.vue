@@ -120,7 +120,7 @@ const lrcTextClick = (time) => {
 };
 
 // 原生 DOM 的逐字歌词实现
-const lyricsContainer = document.getElementById('.lrc-all');
+const lyricsContainer = document.querySelector('.lrc-all');
   // 遍历 music.getPlaySongLyric.yrc 数组
   music.getPlaySongLyric.yrc.forEach((item, index) => {
     // 创建 div 元素

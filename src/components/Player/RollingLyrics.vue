@@ -121,42 +121,29 @@ const lrcTextClick = (time) => {
 
 // 原生 DOM 的逐字歌词实现
 function renderLyricsTemplate(music, setting) {
-  const container = document.createElement('div');
-
-  if (!music.getPlaySongLyric) {
-    return container;
+  const lrcAllContainer = document.querySelector('.lrc-all');
+  
+  if (!music.getPlaySongLyric || !lrcAllContainer) {
+    return; // Exit if no lyrics data or container found
   }
-
-  const lyricsWrapper = document.createElement('div');
-  lyricsWrapper.className = 'yrc';
 
   music.getPlaySongLyric.yrc.forEach((item, index) => {
     const lyricItem = document.createElement('div');
-    lyricItem.className = 'lyric-item';
-    if (music.getPlaySongLyricIndex === index) {
-      lyricItem.classList.add('on');
-    }
-    if (music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex === index - 1) {
-      lyricItem.classList.add('down');
-    }
-    if (music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex === index + 1) {
-      lyricItem.classList.add('up');
-    }
-    if (setting.lyricsBlur) {
-      lyricItem.style.filter = `blur(${getFilter(music.getPlaySongLyricIndex, index)}px)`;
-    }
-
-    if (setting.lyricsPosition === 'center') {
-      lyricItem.style.transformOrigin = 'center';
-      lyricItem.style.alignItems = 'center';
-    } else {
-      lyricItem.style.transformOrigin = null;
-      lyricItem.style.alignItems = 'flex-start';
-    }
-
-    lyricItem.style.marginBottom = `${setting.lyricsFontSize - 1.6}vh`;
-
+    lyricItem.className = 'yrc';
     lyricItem.id = `yrc${index}`;
+
+    // Add dynamic classes
+    lyricItem.classList.toggle('on', music.getPlaySongLyricIndex === index);
+    lyricItem.classList.toggle('down', music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex === index - 1);
+    lyricItem.classList.toggle('up', music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex === index + 1);
+    lyricItem.classList.toggle('blur', setting.lyricsBlur);
+
+    // Apply dynamic styles
+    lyricItem.style.marginBottom = `${setting.lyricsFontSize - 1.6}vh`;
+    lyricItem.style.transformOrigin = setting.lyricsPosition === 'center' ? 'center' : null;
+    lyricItem.style.filter = setting.lyricsBlur ? `blur(${getFilter(music.getPlaySongLyricIndex, index)}px)` : 'none';
+    lyricItem.style.alignItems = setting.lyricsPosition === 'center' ? 'center' : 'flex-start';
+
     lyricItem.onclick = () => lrcTextClick(item.time);
 
     const lyricContent = document.createElement('div');
@@ -164,30 +151,29 @@ function renderLyricsTemplate(music, setting) {
     lyricContent.style.fontSize = `${setting.lyricsFontSize}vh`;
 
     item.content.forEach((v, i) => {
-      const textSpan = document.createElement('span');
-      textSpan.className = 'word';
-      textSpan.innerHTML = v.content.replace(/ /g, '&nbsp;');
+      const textDiv = document.createElement('div');
+      textDiv.className = 'text';
+      textDiv.style.setProperty('--dur', `${Math.max(v.duration - 0.2, 0.1)}s`);
 
-      const fillerSpan = document.createElement('span');
-      fillerSpan.className = 'filler';
-      fillerSpan.innerHTML = v.content.replace(/ /g, '&nbsp;');
+      const textSpan1 = document.createElement('span');
+      textSpan1.className = 'word';
+      textSpan1.innerHTML = v.content.replace(/ /g, '&nbsp;');
 
+      const textSpan2 = document.createElement('span');
+      textSpan2.className = 'filler';
+      textSpan2.innerHTML = v.content.replace(/ /g, '&nbsp;');
+
+      // Add 'fill' class conditionally only to the current playing line
       if (music.getPlaySongLyricIndex === index && music.getPlaySongTime.currentTime + 0.2 >= v.time) {
-        textSpan.classList.add('fill');
-      }
-      if (setting.showYrcTransform) {
-        textSpan.style.transform = 'scale(1.1)';
+        textDiv.classList.add('fill');
       }
 
-      fillerSpan.classList.add('animation');
-      if (!music.playState) {
-        fillerSpan.classList.add('paused');
-      }
+      // Apply transform style based on setting
+      textDiv.style.transform = setting.showYrcTransform ? 'translateY(-50%)' : 'none';
 
-      fillerSpan.style.animationDuration = `${Math.max(v.duration - 0.2, 0.1)}s`;
-
-      lyricContent.appendChild(textSpan);
-      lyricContent.appendChild(fillerSpan);
+      textDiv.appendChild(textSpan1);
+      textDiv.appendChild(textSpan2);
+      lyricContent.appendChild(textDiv);
     });
 
     lyricItem.appendChild(lyricContent);
@@ -208,23 +194,17 @@ function renderLyricsTemplate(music, setting) {
       lyricItem.appendChild(romanizationSpan);
     }
 
-    lyricsWrapper.appendChild(lyricItem);
+    lrcAllContainer.appendChild(lyricItem);
   });
-
-  container.appendChild(lyricsWrapper);
-
-  return container;
 }
 
 onMounted(() => {
-  const lrcAllContainer = document.querySelector('.lrc-all');
-  const lyricsContainer = renderLyricsTemplate(music, setting);
-  lrcAllContainer.appendChild(lyricsContainer);
+  renderLyricsTemplate(music, setting);
 });
 
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 @keyframes progress {
   0% {
     background-size: 0 100%;

@@ -217,7 +217,7 @@ function renderLyricsTemplate(music, setting) {
 }
 
 onMounted(() => {
-  const lrcAllContainer = this.$refs.lrcAllContainer;
+  const lrcAllContainer = document.querySelector('.lrc-all');
   const lyricsContainer = renderLyricsTemplate(music, setting);
   lrcAllContainer.appendChild(lyricsContainer);
 });

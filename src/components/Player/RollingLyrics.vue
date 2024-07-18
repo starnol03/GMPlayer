@@ -4,7 +4,7 @@
     setting.playerStyle === 'cover' ? 'lrc-all cover' : 'lrc-all record',
     setting.lyricsBlock === 'center' ? 'center' : 'top',
     music.getLoadingState ? 'loading' : ''
-  ]">
+  ]" ref="lrcAllContainer">
     <div class="placeholder" :id="!music.getPlaySongLyric.hasYrc || !setting.showYrc ? 'lrc-1' : 'yrc-1'
       " :style="setting.lyricsPosition === 'center'
         ? { justifyContent: 'center', padding: '0' }
@@ -43,8 +43,8 @@
       </div>
     </template>
     <!-- 逐字歌词 -->
-    <!-- template v-else>
-      <div class="yrc" v-for="(item, index) in music.getPlaySongLyric.yrc" :class="{
+    <template v-else>
+      <!-- div class="yrc" v-for="(item, index) in music.getPlaySongLyric.yrc" :class="{
         on: music.getPlaySongLyricIndex === index,
         down: music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex == index - 1,
         up: music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex == index + 1,
@@ -86,8 +86,8 @@
         " :style="{ fontSize: setting.lyricsFontSize - 1.5 + 'vh' }" class="lyric-roma">
           {{ item.roma }}
         </span>
-      </div>
-    </template !-->
+      </div !-->
+    </template>
     <div class="placeholder" />
   </div>
 </template>
@@ -120,121 +120,108 @@ const lrcTextClick = (time) => {
 };
 
 // 原生 DOM 的逐字歌词实现
-const lyricsContainer = document.querySelector('.lrc-all');
-  // 遍历 music.getPlaySongLyric.yrc 数组
-  music.getPlaySongLyric.yrc.forEach((item, index) => {
-    // 创建 div 元素
-    const div = document.createElement('div');
-    div.className = 'yrc';
+function renderLyricsTemplate(music, setting) {
+  const container = document.createElement('div');
 
-    // 添加动态 class
+  if (!music.getPlaySongLyric) {
+    return container;
+  }
+
+  const lyricsWrapper = document.createElement('div');
+  lyricsWrapper.className = 'yrc';
+
+  music.getPlaySongLyric.yrc.forEach((item, index) => {
+    const lyricItem = document.createElement('div');
+    lyricItem.className = 'lyric-item';
     if (music.getPlaySongLyricIndex === index) {
-      div.classList.add('on');
+      lyricItem.classList.add('on');
     }
     if (music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex === index - 1) {
-      div.classList.add('down');
+      lyricItem.classList.add('down');
     }
     if (music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex === index + 1) {
-      div.classList.add('up');
+      lyricItem.classList.add('up');
     }
     if (setting.lyricsBlur) {
-      div.classList.add('blur');
-      div.style.filter = `blur(${getFilter(music.getPlaySongLyricIndex, index)}px)`;
+      lyricItem.style.filter = `blur(${getFilter(music.getPlaySongLyricIndex, index)}px)`;
     }
 
-    // 设置 marginBottom
-    div.style.marginBottom = `${setting.lyricsFontSize - 1.6}vh`;
+    if (setting.lyricsPosition === 'center') {
+      lyricItem.style.transformOrigin = 'center';
+      lyricItem.style.alignItems = 'center';
+    } else {
+      lyricItem.style.transformOrigin = null;
+      lyricItem.style.alignItems = 'flex-start';
+    }
 
-    // 设置 transformOrigin
-    div.style.transformOrigin = setting.lyricsPosition === 'center' ? 'center' : '';
+    lyricItem.style.marginBottom = `${setting.lyricsFontSize - 1.6}vh`;
 
-    // 设置 alignItems
-    div.style.alignItems = setting.lyricsPosition === 'center' ? 'center' : 'flex-start';
+    lyricItem.id = `yrc${index}`;
+    lyricItem.onclick = () => lrcTextClick(item.time);
 
-    // 设置 id 属性
-    div.id = `yrc${index}`;
+    const lyricContent = document.createElement('div');
+    lyricContent.className = 'lyric';
+    lyricContent.style.fontSize = `${setting.lyricsFontSize}vh`;
 
-    // 添加点击事件
-    div.addEventListener('click', () => {
-      lrcTextClick(item.time); // 假设 lrcTextClick 是处理点击事件的函数
-    });
-
-    // 创建歌词文本的 div
-    const lyricDiv = document.createElement('div');
-    lyricDiv.className = 'lyric';
-    lyricDiv.style.fontSize = `${setting.lyricsFontSize}vh`;
-
-    // 遍历歌词内容
     item.content.forEach((v, i) => {
-      // 创建歌词内容的 div
-      const textDiv = document.createElement('div');
-      textDiv.className = 'text';
+      const textSpan = document.createElement('span');
+      textSpan.className = 'word';
+      textSpan.innerHTML = v.content.replace(/ /g, '&nbsp;');
 
-      // 添加动态 class
-      if (music.getPlaySongLyricIndex === index && music.getPlaySongTime.currentTime + 0.2 >= v.time) {
-        textDiv.classList.add('fill');
-      }
-      if (setting.showYrcTransform) {
-        textDiv.classList.add('transform');
-      }
-
-      // 设置 style
-      textDiv.style.setProperty('--dur', `${Math.max(v.duration - 0.2, 0.1)}s`);
-
-      // 创建歌词内容的 span 元素
-      const wordSpan = document.createElement('span');
-      wordSpan.className = 'word';
-      wordSpan.innerHTML = v.content.replace(/ /g, '&nbsp;');
-
-      // 创建填充器的 span 元素
       const fillerSpan = document.createElement('span');
       fillerSpan.className = 'filler';
+      fillerSpan.innerHTML = v.content.replace(/ /g, '&nbsp;');
 
-      // 添加动态 class
-      if (v.content.trim().length >= 1 && v.content.trim().length <= 7 && v.duration > 1) {
-        fillerSpan.classList.add('long');
+      if (music.getPlaySongLyricIndex === index && music.getPlaySongTime.currentTime + 0.2 >= v.time) {
+        textSpan.classList.add('fill');
       }
-      if (setting.showYrcAnimation) {
-        fillerSpan.classList.add('animation');
+      if (setting.showYrcTransform) {
+        textSpan.style.transform = 'scale(1.1)';
       }
+
+      fillerSpan.classList.add('animation');
       if (!music.playState) {
         fillerSpan.classList.add('paused');
       }
 
-      // 设置 innerHTML
-      fillerSpan.innerHTML = v.content.replace(/ /g, '&nbsp;');
+      fillerSpan.style.animationDuration = `${Math.max(v.duration - 0.2, 0.1)}s`;
 
-      // 将 wordSpan 和 fillerSpan 添加到 textDiv 中
-      textDiv.appendChild(wordSpan);
-      textDiv.appendChild(fillerSpan);
-
-      // 将 textDiv 添加到 lyricDiv 中
-      lyricDiv.appendChild(textDiv);
+      lyricContent.appendChild(textSpan);
+      lyricContent.appendChild(fillerSpan);
     });
 
-    // 将 lyricDiv 添加到 div 中
-    div.appendChild(lyricDiv);
+    lyricItem.appendChild(lyricContent);
 
-    // 创建翻译和罗马音的 span 元素
     if (music.getPlaySongLyric.hasYrcTran && setting.showTransl && item.tran) {
-      const translSpan = document.createElement('span');
-      translSpan.className = 'lyric-fy';
-      translSpan.style.fontSize = `${setting.lyricsFontSize - 1}vh`;
-      translSpan.textContent = item.tran;
-      div.appendChild(translSpan);
+      const translationSpan = document.createElement('span');
+      translationSpan.className = 'lyric-fy';
+      translationSpan.style.fontSize = `${setting.lyricsFontSize - 1}vh`;
+      translationSpan.innerHTML = item.tran;
+      lyricItem.appendChild(translationSpan);
     }
 
     if (music.getPlaySongLyric.hasYrcRoma && setting.showRoma && item.roma) {
-      const romaSpan = document.createElement('span');
-      romaSpan.className = 'lyric-roma';
-      romaSpan.style.fontSize = `${setting.lyricsFontSize - 1.5}vh`;
-      romaSpan.textContent = item.roma;
-      div.appendChild(romaSpan);
+      const romanizationSpan = document.createElement('span');
+      romanizationSpan.className = 'lyric-roma';
+      romanizationSpan.style.fontSize = `${setting.lyricsFontSize - 1.5}vh`;
+      romanizationSpan.innerHTML = item.roma;
+      lyricItem.appendChild(romanizationSpan);
     }
 
-    // 将 div 元素添加到容器中
-    lyricsContainer.appendChild(div);
+    lyricsWrapper.appendChild(lyricItem);
   });
+
+  container.appendChild(lyricsWrapper);
+
+  return container;
+}
+
+onMounted(() => {
+  const lrcAllContainer = this.$refs.lrcAllContainer;
+  const lyricsContainer = renderLyricsTemplate(music, setting);
+  lrcAllContainer.appendChild(lyricsContainer);
+});
+
 </script>
 
 <style lang="scss" scoped>

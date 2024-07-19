@@ -52,6 +52,7 @@
 <script setup>
 import { musicStore, settingStore } from "@/store";
 import CountDown from "./CountDown.vue";
+import { onUpdated } from "vue";
 
 const music = musicStore();
 const setting = settingStore();
@@ -205,15 +206,23 @@ function updateLyricsDisplay(music) {
   });
 }
 
-// 每毫秒更新一次歌词
-setInterval(() => {
-  updateLyricsDisplay(music);
-}, 1);
+const lyricsUpdateInterval = () => {
+  clearInterval()
+  setInterval(() => {
+    updateLyricsDisplay(music);
+  }, 0.7);
+}
 
 // DOM 挂载完成时加载歌词实现
 onMounted(() => {
-  renderLyricsTemplate(music, setting);
+  renderLyricsTemplate(music, setting)
+  lyricsUpdateInterval()
 });
+
+onUpdated(() => {
+  renderLyricsTemplate(music, setting)
+  lyricsUpdateInterval()
+})
 
 </script>
 

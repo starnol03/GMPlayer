@@ -52,11 +52,12 @@
 <script setup>
 import { musicStore, settingStore } from "@/store";
 import CountDown from "./CountDown.vue";
-import { onUpdated } from "vue";
+import { onUpdated, onBeforeUpdate } from "vue";
 
 const music = musicStore();
 const setting = settingStore();
 const reg = /^\[\d{2}:\d{2}\.\d{3}\]$/
+let previousSongId = null;
 
 console.log('歌词数据', music.getPlaySongLyric)
 
@@ -75,6 +76,7 @@ const lrcTextClick = (time) => {
 
 // 原生 DOM 的逐字歌词实现
 function renderLyricsTemplate(music, setting) {
+  clearInterval()
   const lrcAllContainer = document.querySelector('.lrc-all');
   
   // Exit early if no lyrics data or container found
@@ -82,8 +84,13 @@ function renderLyricsTemplate(music, setting) {
     return; // Exit if no lyrics data or container found, or yrc should not be shown
   }
 
+  lrcAllContainer.querySelectorAll('.yrc').forEach((yrcDiv) => {
+    lrcAllContainer.removeChild(yrcDiv)
+  })
+
   // Iterate through each lyric item
-  music.getPlaySongLyric.yrc.forEach((item, index) => {
+  music.getPlaySongLyric
+  .yrc.forEach((item, index) => {
     // Create a new div element for each lyric item
     const lyricItem = document.createElement('div');
     lyricItem.className = 'yrc';
@@ -210,19 +217,32 @@ const lyricsUpdateInterval = () => {
   clearInterval()
   setInterval(() => {
     updateLyricsDisplay(music);
-  }, 0.7);
+  }, 0.1);
 }
 
 // DOM 挂载完成时加载歌词实现
 onMounted(() => {
-  renderLyricsTemplate(music, setting)
+  setTimeout(renderLyricsTemplate(music, setting), 200)
   lyricsUpdateInterval()
+  previousSongId = music.getPlaySongData.id;
 });
+
+onBeforeUpdate(() => {
+  setTimeout(renderLyricsTemplate(music, setting), 200)
+  lyricsUpdateInterval()
+  previousSongId = music.getPlaySongData.id;
+})
 
 onUpdated(() => {
   renderLyricsTemplate(music, setting)
+  previousSongId = music.getPlaySongData.id;
   lyricsUpdateInterval()
 })
+
+watch(
+  () => music.getPlaySongData.id,
+  () => renderLyricsTemplate(music, setting)
+)
 
 </script>
 

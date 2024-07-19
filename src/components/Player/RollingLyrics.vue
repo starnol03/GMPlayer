@@ -64,11 +64,7 @@ const emit = defineEmits(["lrcTextClick"]);
 
 // 歌词模糊数值
 const getFilter = (lrcIndex, index) => {
-  if (lrcIndex >= index) {
-    return lrcIndex - index;
-  } else {
-    return index - lrcIndex;
-  }
+  return lrcIndex >= index ? lrcIndex - index : index - lrcIndex;
 };
 
 // 歌词文本点击
@@ -81,8 +77,8 @@ function renderLyricsTemplate(music, setting) {
   const lrcAllContainer = document.querySelector('.lrc-all');
   
   // Exit early if no lyrics data or container found
-  if (!music.getPlaySongLyric || !lrcAllContainer) {
-    return;
+  if (!music.getPlaySongLyric || !lrcAllContainer || !(music.getPlaySongLyric.hasYrc || setting.showYrc)) {
+    return; // Exit if no lyrics data or container found, or yrc should not be shown
   }
 
   // Iterate through each lyric item
@@ -171,6 +167,7 @@ function renderLyricsTemplate(music, setting) {
   });
 }
 
+// 逐字歌词动态更新
 function updateLyricsDisplay(music) {
   const currentIndex = music.getPlaySongLyricIndex;
 
@@ -197,26 +194,23 @@ function updateLyricsDisplay(music) {
       }
 
       // Update filler text opacity based on current time
-      if (music.getPlaySongTime.currentTime >= v.time && music.getPlaySongTime.currentTime <= v.time + v.duration) {
-        textSpan2.style.opacity = 1;
-      } else {
-        textSpan2.style.opacity = 0;
-      }
+      textSpan2.style.opacity = (music.getPlaySongTime.currentTime >= v.time && music.getPlaySongTime.currentTime <= v.time + v.duration) ? 1 : 0;
 
-      if (currentIndex === index && music.getPlaySongTime.currentTime + 0.2 >= v.time) {
-        textDiv.classList.add('fill');
-      } else {
-        textDiv.classList.remove('fill');
-      }
+      // Update 'fill' class for current playing line
+      textDiv.classList.toggle('fill', currentIndex === index && music.getPlaySongTime.currentTime + 0.2 >= v.time);
+
+      // Update filler text color based on yrc container 'on' class
+      textSpan2.style.color = lyricItem.classList.contains('on') ? 'white' : '';
     });
   });
 }
 
-// Example: Update display every 100ms based on music playback time
+// 每毫秒更新一次歌词
 setInterval(() => {
   updateLyricsDisplay(music);
-}, 100);
+}, 1);
 
+// DOM 挂载完成时加载歌词实现
 onMounted(() => {
   renderLyricsTemplate(music, setting);
 });

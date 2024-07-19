@@ -44,49 +44,6 @@
     </template>
     <!-- 逐字歌词 -->
     <template v-else>
-      <!-- div class="yrc" v-for="(item, index) in music.getPlaySongLyric.yrc" :class="{
-        on: music.getPlaySongLyricIndex === index,
-        down: music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex == index - 1,
-        up: music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex == index + 1,
-        blur: setting.lyricsBlur,
-      }" :style="{
-        marginBottom: setting.lyricsFontSize - 1.6 + 'vh',
-        transformOrigin:
-          setting.lyricsPosition === 'center' ? 'center' : null,
-        filter: setting.lyricsBlur
-          ? `blur(${getFilter(music.getPlaySongLyricIndex, index)}px)`
-          : 'none',
-        alignItems:
-          setting.lyricsPosition === 'center' ? 'center' : 'flex-start',
-      }" :key="item" :id="'yrc' + index" @click="lrcTextClick(item.time)">
-        <div class="lyric" :style="{ fontSize: setting.lyricsFontSize + 'vh' }">
-          <div class="text" v-for="(v, i) in item.content" :class="{
-            fill:
-              music.getPlaySongLyricIndex === index &&
-              music.getPlaySongTime.currentTime + 0.2 >= v.time,
-            transform: setting.showYrcTransform,
-          }" :key="i" :style="{
-            '--dur': `${Math.max(v.duration - 0.2, 0.1)}s`,
-          }">
-            <span class="word" v-html="v.content.replace(/ /g, '&nbsp;')" />
-            <span class="filler" :class="{
-              long: v.content.trim().length >= 1 && v.content.trim().length <= 7 && v.duration > 1,
-              animation: setting.showYrcAnimation,
-              paused: !music.playState,
-            }" v-html="v.content.replace(/ /g, '&nbsp;')" />
-          </div>
-        </div>
-        <span v-if="
-          music.getPlaySongLyric.hasYrcTran && setting.showTransl && item.tran
-        " :style="{ fontSize: setting.lyricsFontSize - 1 + 'vh' }" class="lyric-fy">
-          {{ item.tran }}
-        </span>
-        <span v-if="
-          music.getPlaySongLyric.hasYrcRoma && setting.showRoma && item.roma
-        " :style="{ fontSize: setting.lyricsFontSize - 1.5 + 'vh' }" class="lyric-roma">
-          {{ item.roma }}
-        </span>
-      </div !-->
     </template>
     <div class="placeholder" />
   </div>
@@ -95,6 +52,7 @@
 <script setup>
 import { musicStore, settingStore } from "@/store";
 import CountDown from "./CountDown.vue";
+import debounce from '@/utils/debounce-old'
 
 const music = musicStore();
 const setting = settingStore();
@@ -123,38 +81,46 @@ const lrcTextClick = (time) => {
 function renderLyricsTemplate(music, setting) {
   const lrcAllContainer = document.querySelector('.lrc-all');
   
+  // Exit early if no lyrics data or container found
   if (!music.getPlaySongLyric || !lrcAllContainer) {
-    return; // Exit if no lyrics data or container found
+    return;
   }
 
+  // Iterate through each lyric item
   music.getPlaySongLyric.yrc.forEach((item, index) => {
+    // Create a new div element for each lyric item
     const lyricItem = document.createElement('div');
     lyricItem.className = 'yrc';
     lyricItem.id = `yrc${index}`;
 
-    // Add dynamic classes
+    // Add dynamic classes based on current playing state and settings
     lyricItem.classList.toggle('on', music.getPlaySongLyricIndex === index);
     lyricItem.classList.toggle('down', music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex === index - 1);
     lyricItem.classList.toggle('up', music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex === index + 1);
     lyricItem.classList.toggle('blur', setting.lyricsBlur);
 
-    // Apply dynamic styles
+    // Apply dynamic styles based on settings
     lyricItem.style.marginBottom = `${setting.lyricsFontSize - 1.6}vh`;
     lyricItem.style.transformOrigin = setting.lyricsPosition === 'center' ? 'center' : null;
     lyricItem.style.filter = setting.lyricsBlur ? `blur(${getFilter(music.getPlaySongLyricIndex, index)}px)` : 'none';
     lyricItem.style.alignItems = setting.lyricsPosition === 'center' ? 'center' : 'flex-start';
 
+    // Handle click event on lyric item
     lyricItem.onclick = () => lrcTextClick(item.time);
 
+    // Create a div for the main lyric content
     const lyricContent = document.createElement('div');
     lyricContent.className = 'lyric';
     lyricContent.style.fontSize = `${setting.lyricsFontSize}vh`;
 
+    // Iterate through each line of content in the lyric item
     item.content.forEach((v, i) => {
+      // Create a div for each line of text
       const textDiv = document.createElement('div');
       textDiv.className = 'text';
       textDiv.style.setProperty('--dur', `${Math.max(v.duration - 0.2, 0.1)}s`);
 
+      // Create spans for the main text and filler text
       const textSpan1 = document.createElement('span');
       textSpan1.className = 'word';
       textSpan1.innerHTML = v.content.replace(/ /g, '&nbsp;');
@@ -162,8 +128,9 @@ function renderLyricsTemplate(music, setting) {
       const textSpan2 = document.createElement('span');
       textSpan2.className = 'filler';
       textSpan2.innerHTML = v.content.replace(/ /g, '&nbsp;');
+      textSpan2.setAttribute('data-updated', 'false');
 
-      // Add 'fill' class conditionally only to the current playing line
+      // Add 'fill' class conditionally based on current playing time
       if (music.getPlaySongLyricIndex === index && music.getPlaySongTime.currentTime + 0.2 >= v.time) {
         textDiv.classList.add('fill');
       }
@@ -171,13 +138,18 @@ function renderLyricsTemplate(music, setting) {
       // Apply transform style based on setting
       textDiv.style.transform = setting.showYrcTransform ? 'translateY(-50%)' : 'none';
 
+      // Append spans to text div
       textDiv.appendChild(textSpan1);
       textDiv.appendChild(textSpan2);
+
+      // Append text div to main lyric content div
       lyricContent.appendChild(textDiv);
     });
 
+    // Append lyric content div to lyric item
     lyricItem.appendChild(lyricContent);
 
+    // Append translation span if translation exists and setting is enabled
     if (music.getPlaySongLyric.hasYrcTran && setting.showTransl && item.tran) {
       const translationSpan = document.createElement('span');
       translationSpan.className = 'lyric-fy';
@@ -186,6 +158,7 @@ function renderLyricsTemplate(music, setting) {
       lyricItem.appendChild(translationSpan);
     }
 
+    // Append romanization span if romanization exists and setting is enabled
     if (music.getPlaySongLyric.hasYrcRoma && setting.showRoma && item.roma) {
       const romanizationSpan = document.createElement('span');
       romanizationSpan.className = 'lyric-roma';
@@ -194,9 +167,56 @@ function renderLyricsTemplate(music, setting) {
       lyricItem.appendChild(romanizationSpan);
     }
 
+    // Append the completed lyric item to the main container
     lrcAllContainer.appendChild(lyricItem);
   });
 }
+
+function updateLyricsDisplay(music, setting) {
+  const currentIndex = music.getPlaySongLyricIndex;
+
+  const lyricItems = document.querySelectorAll('.yrc');
+
+  lyricItems.forEach((lyricItem, index) => {
+    const item = music.getPlaySongLyric.yrc[index];
+    const content = item.content;
+
+    // Update yrc container classes
+    lyricItem.classList.toggle('on', currentIndex === index);
+    lyricItem.classList.toggle('down', currentIndex !== 0 && currentIndex === index - 1);
+    lyricItem.classList.toggle('up', currentIndex !== 0 && currentIndex === index + 1);
+
+    content.forEach((v, i) => {
+      const textDiv = lyricItem.querySelectorAll('.text')[i];
+      const textSpan2 = lyricItem.querySelectorAll('.filler')[i];
+
+      // Check if filler text has been updated before
+      if (textSpan2.getAttribute('data-updated') === 'false') {
+        // Update filler text
+        textSpan2.innerHTML = v.content.replace(/ /g, '&nbsp;');
+        textSpan2.setAttribute('data-updated', 'true');
+      }
+
+      // Update filler text opacity based on current time
+      if (music.getPlaySongTime.currentTime >= v.time && music.getPlaySongTime.currentTime <= v.time + v.duration) {
+        textSpan2.style.opacity = 1;
+      } else {
+        textSpan2.style.opacity = 0;
+      }
+
+      if (currentIndex === index && music.getPlaySongTime.currentTime + 0.2 >= v.time) {
+        textDiv.classList.add('fill');
+      } else {
+        textDiv.classList.remove('fill');
+      }
+    });
+  });
+}
+
+// Example: Update display every 100ms based on music playback time
+setInterval(() => {
+  updateLyricsDisplay(music, setting);
+}, 100);
 
 onMounted(() => {
   renderLyricsTemplate(music, setting);

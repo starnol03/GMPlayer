@@ -52,7 +52,6 @@
 <script setup>
 import { musicStore, settingStore } from "@/store";
 import CountDown from "./CountDown.vue";
-import debounce from '@/utils/debounce-old'
 
 const music = musicStore();
 const setting = settingStore();
@@ -172,7 +171,7 @@ function renderLyricsTemplate(music, setting) {
   });
 }
 
-function updateLyricsDisplay(music, setting) {
+function updateLyricsDisplay(music) {
   const currentIndex = music.getPlaySongLyricIndex;
 
   const lyricItems = document.querySelectorAll('.yrc');
@@ -215,7 +214,7 @@ function updateLyricsDisplay(music, setting) {
 
 // Example: Update display every 100ms based on music playback time
 setInterval(() => {
-  updateLyricsDisplay(music, setting);
+  updateLyricsDisplay(music);
 }, 100);
 
 onMounted(() => {

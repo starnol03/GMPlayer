@@ -21,10 +21,13 @@
       </Transition>
 
       <template v-if="setting.backgroundImageShow === 'eplor'">
-        <BackgroundRender :fps="music.getPlayState ? setting.fps : 0"
+        <BackgroundRender 
+          :fps="music.getPlayState ? setting.fps : 0"
+          :playing="music.getPlayState"
           :flowSpeed="music.getPlayState ? (setting.dynamicFlowSpeed ? dynamicFlowSpeed : setting.flowSpeed) : 0"
           :album="setting.albumImageUrl === 'none' ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') : setting.albumImageUrl"
-          :renderScale="setting.renderScale" class="overlay" />
+          :renderScale="setting.renderScale" 
+          class="overlay" />
       </template>
       <div :class="setting.backgroundImageShow === 'blur' ? 'gray blur' : 'gray'" />
       <div class="icon-menu">
@@ -294,7 +297,7 @@ watch(
 // 监听频谱更新
 watch(() => music.getSpectrumsData, throttle(200, (val) => {
   if (!music.getPlayState || !setting.dynamicFlowSpeed) return;
-  const variance = Math.max(Math.round(analyzeAudioIntensity(val) * setting.dynamicFlowSpeedScale), 6)
+  const variance = Math.max(Math.round(analyzeAudioIntensity(val) * setting.dynamicFlowSpeedScale * 10), 6)
   dynamicFlowSpeed.value = variance
 }))
 

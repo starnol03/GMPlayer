@@ -130,60 +130,58 @@ const parseLrc = (lyrics) => {
 const parseYrc = (lyrics) => {
   if (!lyrics) return [];
   try {
-    // Split lyrics into lines
-    const lines = lyrics.split("\n");
-
-    // Process each line to extract timestamp and content
-    const parsedLyrics = lines.reduce((result, line) => {
-      // 匹配每一行中的时间戳信息
-      const timeReg = /\[(\d+),(\d+)\]/;
-      const timeMatch = line.match(timeReg);
-      if (!timeMatch) {
-        return result;
-      }
-      // 解构出起始时间和结束时间
-      const [_, startTime, endTime] = timeMatch;
-      if (isNaN(startTime) || isNaN(endTime)) {
-        return result;
-      }
-      // 去除当前行中的时间戳信息，得到歌词内容
-      const content = line.replace(timeReg, "");
-      if (!content) {
-        return result;
-      }
-      // 对歌词内容中的时间戳和歌词内容分离
-      const contentArray = content
-        .split(/(\([1-9]\d*,[1-9]\d*,\d*\)[^\(]*)/g)
-        .filter((c) => c.trim())
-        .map((c) => {
-          // 匹配当前片段中的时间戳信息
-          const timeReg = /\((\d+),(\d+),(\d+)\)/;
-          const timeMatch = c.match(timeReg);
-          if (!timeMatch) {
-            return null;
-          }
-          // 解构出时间戳，持续时间和歌词内容
-          const [_, time, duration] = timeMatch;
-          const content = c.replace(timeReg, "");
-          if (!content) {
-            return null;
-          }
-          return {
-            time: Number(time) / 1000 + 0.1,
-            duration: Number(duration) / 1000,
-            content,
-          };
-        })
-        .filter((c) => c);
-      // Push the parsed line into result
-      result.push({
-        time: Number(startTime) / 1000,
-        endTime: Number(endTime) / 1000,
-        content: contentArray,
-      });
-      return result;
-    }, []);
-
+    // 遍历每一行逐字歌词
+    const parsedLyrics = lyrics
+      .split("\n")
+      .map((line) => {
+        // 匹配每一行中的时间戳信息
+        const timeReg = /\[(\d+),(\d+)\]/;
+        const timeMatch = line.match(timeReg);
+        if (!timeMatch) {
+          return null;
+        }
+        // 解构出起始时间和结束时间
+        const [_, startTime, endTime] = timeMatch;
+        if (isNaN(startTime) || isNaN(endTime)) {
+          return null;
+        }
+        // 去除当前行中的时间戳信息，得到歌词内容
+        const content = line.replace(timeReg, "");
+        if (!content) {
+          return null;
+        }
+        // 对歌词内容中的时间戳和歌词内容分离
+        const contentArray = content
+          .split(/(\([1-9]\d*,[1-9]\d*,\d*\)[^\(]*)/g)
+          .filter((c) => c.trim())
+          .map((c) => {
+            // 匹配当前片段中的时间戳信息
+            const timeReg = /\((\d+),(\d+),(\d+)\)/;
+            const timeMatch = c.match(timeReg);
+            if (!timeMatch) {
+              return null;
+            }
+            // 解构出时间戳，持续时间和歌词内容
+            const [_, time, duration] = timeMatch;
+            const content = c.replace(timeReg, "");
+            if (!content) {
+              return null;
+            }
+            return {
+              time: Number(time) / 1000 + 0.1,
+              duration: Number(duration) / 1000,
+              content,
+            };
+          })
+          .filter((c) => c);
+        // 返回当前行解析出的时间信息和歌词内容信息
+        return {
+          time: Number(startTime) / 1000,
+          endTime: Number(endTime) / 1000,
+          content: contentArray,
+        };
+      })
+      .filter((line) => line);
     return parsedLyrics;
   } catch (err) {
     console.error("逐字歌词处理出错：" + err);

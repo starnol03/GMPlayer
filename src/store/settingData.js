@@ -52,13 +52,13 @@ const useSettingDataStore = defineStore("settingData", {
       // 播放背景是否显示图片
       backgroundImageShow: "blur",
       // 流动背景设置
-      fps: 40,
+      fps: 60,
       flowSpeed: 2,
       renderScale: 0.5,
       albumImageUrl: "none",
       // 动态背景设置
       dynamicFlowSpeed: false,
-      dynamicFlowSpeedScale: 50,
+      dynamicFlowSpeedScale: 27,
       // 是否显示前奏等待
       countDownShow: true,
       // 是否显示歌词设置

@@ -4,246 +4,356 @@
     setting.playerStyle === 'cover' ? 'lrc-all cover' : 'lrc-all record',
     setting.lyricsBlock === 'center' ? 'center' : 'top',
     music.getLoadingState ? 'loading' : ''
-  ]" ref="lrcAllContainer">
-    <div class="placeholder" :id="!music.getPlaySongLyric.hasYrc || !setting.showYrc ? 'lrc-1' : 'yrc-1'
-      " :style="setting.lyricsPosition === 'center'
-        ? { justifyContent: 'center', padding: '0' }
-        : null
-        ">
+  ]" ref="containerRef">
+    <div class="placeholder" :style="setting.lyricsPosition === 'center' ? { justifyContent: 'center', padding: '0' } : null">
       <CountDown v-if="setting.countDownShow" :style="{ fontSize: setting.lyricsFontSize + 'vh' }" />
     </div>
-    <!-- 普通歌词 -->
-    <template v-if="!music.getPlaySongLyric.hasYrc || !setting.showYrc">
-      <div class="lrc" v-for="(item, index) in music.getPlaySongLyric.lrc" :class="{
-        on: music.getPlaySongLyricIndex == index,
-        down: music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex == index - 1,
-        up: music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex == index + 1,
-        blur: setting.lyricsBlur,
-      }" :style="{
-        marginBottom: setting.lyricsFontSize - 1.6 + 'vh',
-        transformOrigin:
-          setting.lyricsPosition === 'center' ? 'center' : null,
-        filter: setting.lyricsBlur
-          ? `blur(${getFilter(music.getPlaySongLyricIndex, index)}px)`
-          : 'none',
-        alignItems:
-          setting.lyricsPosition === 'center' ? 'center' : 'flex-start',
-      }" :key="item" :id="'lrc' + index" @click="lrcTextClick(item.time)">
-        <span class="lyric" :style="{ fontSize: setting.lyricsFontSize + 'vh' }">
-          {{ item.content }}
-        </span>
-        <span v-if="
-          music.getPlaySongLyric.hasLrcTran && setting.showTransl && item.tran && !(reg.test(item.tran)) // 排除为时间轨道
-        " :style="{ fontSize: setting.lyricsFontSize - 1 + 'vh' }" class="lyric-fy">
-          {{ item.tran }}</span>
-        <span v-if="
-          music.getPlaySongLyric.hasLrcRoma && setting.showRoma && item.roma && !(reg.test(item.roma))
-        " :style="{ fontSize: setting.lyricsFontSize - 1.5 + 'vh' }" class="lyric-roma">
-          {{ item.roma }}</span>
+    
+    <!-- 歌词容器 -->
+    <div class="lyrics-container" ref="lyricsRef">
+      <div v-for="(line, index) in processedLyrics" 
+           :key="index"
+           :class="['lyric-line', { active: currentLineIndex === index }]"
+           :style="getLineStyle(index)"
+           @click="lrcTextClick(line.startTime)">
+        <div class="text" :style="{ fontSize: setting.lyricsFontSize + 'vh' }">
+          <template v-if="line.words && line.words.length">
+            <span v-for="(char, charIndex) in line.words" 
+                  :key="charIndex"
+                  :class="['char', { 
+                    active: isCharActive(line, char, index),
+                    transform: setting.showYrcTransform 
+                  }]"
+                  :style="getCharStyle(char)">
+              {{ char.word }}<span class="word-space"> </span>
+            </span>
+          </template>
+          <template v-else>
+            {{ line.originalLyric }}
+          </template>
+        </div>
+        <div v-if="line.translatedLyric && setting.showTransl" 
+             class="translation" 
+             :style="{ fontSize: (setting.lyricsFontSize - 1) + 'vh' }">
+          {{ line.translatedLyric }}
+        </div>
+        <div v-if="line.romajiLyric && setting.showRoma" 
+             class="romaji" 
+             :style="{ fontSize: (setting.lyricsFontSize - 1.5) + 'vh' }">
+          {{ line.romajiLyric }}
+        </div>
       </div>
-    </template>
-    <!-- 逐字歌词 -->
-    <template v-else>
-    </template>
+    </div>
+    
     <div class="placeholder" />
   </div>
 </template>
 
 <script setup>
+import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { musicStore, settingStore } from "@/store";
 import CountDown from "./CountDown.vue";
-import { onUpdated, onBeforeUpdate } from "vue";
+import { LyricPlayer } from '@applemusic-like-lyrics/core';
 
 const music = musicStore();
 const setting = settingStore();
-const reg = /^\[\d{2}:\d{2}\.\d{3}\]$/
-let previousSongId = null;
 
-console.log('歌词数据', music.getPlaySongLyric)
+const containerRef = ref(null);
+const lyricsRef = ref(null);
+const currentLineIndex = ref(0);
+let lyricPlayer = null;
+let animationFrameId = null;
+let lastTime = -1;
+
+console.log('歌词数据', music.getPlaySongLyric);
+
+// 处理歌词数据
+const processedLyrics = computed(() => {
+  if (!music.getPlaySongLyric.hasYrc || !setting.showYrc) {
+    // 处理普通歌词
+    return music.getPlaySongLyric.lrc.map((line, index, array) => ({
+      startTime: line.time, // 转换为毫秒
+      endTime: array[index + 1] ? array[index + 1].time : line.time + 5000, // 使用下一行的时间或默认持续5秒
+      originalLyric: line.content,
+      translatedLyric: setting.showTransl && line.tran ? line.tran : undefined,
+      romanLyric: setting.showRoma && line.roma ? line.roma : undefined
+    }));
+  } else {
+    // 处理逐字歌词
+    return music.getPlaySongLyric.yrc.map((line, index, array) => ({
+      startTime: line.time, // 转换为毫秒
+      endTime: array[index + 1] ? array[index + 1].time : line.endTime,
+      originalLyric: line.content.map(char => char.content), // 添加空格
+      words: line.content.map(char => ({
+        word: char.content,
+        startTime: char.time,
+        duration: char.duration
+      })),
+      translatedLyric: setting.showTransl && line.tran ? line.tran : undefined,
+      romanLyric: setting.showRoma && line.roma ? line.roma : undefined
+    }));
+  }
+});
+
+// 动画帧更新函数
+const frame = (time) => {
+  try {
+    if (lastTime === -1) {
+      lastTime = time;
+    }
+    
+    if (lyricPlayer && music.playState) {
+      const currentTime = music.getPlaySongTime.currentTime;
+      if (currentTime > 0) {
+        const timeInMs = currentTime * 1000;
+        lyricPlayer.setCurrentTime(currentTime);
+        lyricPlayer.resetScroll();
+        lyricPlayer.calcLayout();
+        lyricPlayer.update(Math.abs(currentTime - lastTime));
+        
+        // 手动计算当前行索引
+        const newLineIndex = processedLyrics.value.findIndex((line, index) => {
+          const nextLine = processedLyrics.value[index + 1];
+          return timeInMs >= line.startTime && 
+                 (!nextLine || timeInMs < nextLine.startTime);
+        });
+        
+        if (newLineIndex !== -1 && newLineIndex !== currentLineIndex.value) {
+          currentLineIndex.value = newLineIndex;
+          scrollToLine(newLineIndex);
+        }
+      }
+    }
+    
+    lastTime = time;
+    // 只有在播放状态下才继续请求动画帧
+    if (music.playState) {
+      animationFrameId = requestAnimationFrame(frame);
+    } else {
+      animationFrameId = null;
+    }
+  } catch (error) {
+    console.error('动画帧更新错误:', error);
+    animationFrameId = null;
+  }
+};
+
+// 初始化歌词播放器
+const initLyricPlayer = () => {
+  try {
+    // 清理旧的实例
+    if (lyricPlayer) {
+      lyricPlayer.dispose();
+      lyricPlayer = null;
+    }
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
+
+    // 检查歌词数据
+    if (!processedLyrics.value || processedLyrics.value.length === 0) {
+      console.log('没有歌词数据，跳过初始化');
+      return;
+    }
+
+    // 创建新实例
+    lyricPlayer = new LyricPlayer();
+    
+    // 设置歌词
+    lyricPlayer.setLyricLines(processedLyrics.value);
+    
+    // 设置播放状态
+    lyricPlayer.playing = music.playState;
+
+    // 立即定位到当前时间
+    const currentTime = music.getPlaySongTime.currentTime;
+    if (currentTime > 0) {
+      const timeInMs = currentTime * 1000;
+      lyricPlayer.setCurrentTime(currentTime);
+      lyricPlayer.resetScroll();
+      lyricPlayer.calcLayout();
+      lyricPlayer.update(0);
+      
+      // 手动计算初始行索引
+      const initialIndex = processedLyrics.value.findIndex((line, index) => {
+        const nextLine = processedLyrics.value[index + 1];
+        return timeInMs >= line.startTime && 
+               (!nextLine || timeInMs < nextLine.startTime);
+      });
+      
+      if (initialIndex !== -1) {
+        currentLineIndex.value = initialIndex;
+        scrollToLine(initialIndex);
+      }
+    }
+
+    // 开始动画帧更新
+    lastTime = -1;
+    animationFrameId = requestAnimationFrame(frame);
+  } catch (error) {
+    console.error('歌词播放器初始化失败:', error);
+  }
+};
+
+// 监听歌曲切换
+watch(() => music.getPlaySongData?.id, (newId, oldId) => {
+  if (newId !== oldId) {
+    console.log('歌曲切换，重新初始化动画帧');
+    // 取消当前的动画帧
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
+    // 重置时间
+    lastTime = -1;
+    // 重新开始动画帧更新
+    animationFrameId = requestAnimationFrame(frame);
+  }
+});
+
+// 监听歌词数据变化
+watch(() => music.getPlaySongLyric, () => {
+  console.log('歌词数据变化，重新初始化');
+  // 重置状态
+  currentLineIndex.value = 0;
+  lastTime = -1;
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  
+  nextTick(() => {
+    initLyricPlayer();
+  });
+}, { deep: true });
+
+// 监听播放状态变化
+watch(() => music.playState, (playing) => {
+  console.log('播放状态变化', playing);
+  if (lyricPlayer) {
+    lyricPlayer.playing = playing;
+    // 如果开始播放且没有动画帧，则启动动画帧
+    if (playing && !animationFrameId) {
+      lastTime = -1;
+      animationFrameId = requestAnimationFrame(frame);
+    }
+  }
+});
+
+// 监听播放时间变化
+watch(() => music.getPlaySongTime.currentTime, (newTime) => {
+  if (lyricPlayer && newTime > 0) {
+    lyricPlayer.setCurrentTime(newTime);
+  
+    lyricPlayer.resetScroll();
+    lyricPlayer.calcLayout();
+    
+    lyricPlayer.update(Math.abs(newTime - music.getPlaySongTime.currentTime));
+  }
+});
+
+// 组件挂载时初始化
+onMounted(() => {
+  nextTick(() => {
+    initLyricPlayer();
+  });
+});
+
+// 滚动到指定行
+const scrollToLine = (index) => {
+  if (!lyricsRef.value || !containerRef.value) return;
+  
+  const container = containerRef.value;
+  const lines = lyricsRef.value.children;
+  if (!lines[index]) return;
+
+  const line = lines[index];
+  const containerHeight = container.clientHeight;
+  const lineTop = line.offsetTop;
+  const lineHeight = line.clientHeight;
+
+  let scrollTop;
+  if (setting.lyricsPosition === 'center') {
+    scrollTop = lineTop - (containerHeight / 2) + (lineHeight / 2);
+  } else {
+    scrollTop = lineTop - containerHeight * 0.2;
+  }
+
+  // 使用 requestAnimationFrame 进行平滑滚动
+  const currentScroll = container.scrollTop;
+  const diff = scrollTop - currentScroll;
+  const duration = 300; // 滚动动画持续时间（毫秒）
+  const startTime = performance.now();
+
+  const scroll = (currentTime) => {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // 使用 easeInOutCubic 缓动函数
+    const easeProgress = progress < 0.5
+      ? 4 * progress * progress * progress
+      : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+    
+    container.scrollTop = currentScroll + (diff * easeProgress);
+    
+    if (progress < 1) {
+      requestAnimationFrame(scroll);
+    }
+  };
+
+  requestAnimationFrame(scroll);
+};
+
+// 获取行样式
+const getLineStyle = (index) => {
+  const style = {
+    marginBottom: `${setting.lyricsFontSize - 1.6}vh`,
+  };
+
+  if (setting.lyricsBlur) {
+    const blur = Math.abs(currentLineIndex.value - index);
+    style.filter = `blur(${blur}px)`;
+  }
+
+  return style;
+};
+
+// 获取字符样式
+const getCharStyle = (char) => {
+  if (!setting.showYrcAnimation) return {};
+  
+  return {
+    '--duration': `${Math.max(char.duration - 0.2, 0.1)}s`,
+  };
+};
+
+// 判断字符是否激活
+const isCharActive = (line, char, lineIndex) => {
+  if (currentLineIndex.value !== lineIndex) return false;
+  const currentTime = music.getPlaySongTime.currentTime * 1000;
+  return currentTime >= char.startTime && currentTime < (char.startTime + char.duration);
+};
 
 // 发送方法
 const emit = defineEmits(["lrcTextClick"]);
 
-// 歌词模糊数值
-const getFilter = (lrcIndex, index) => {
-  return lrcIndex >= index ? lrcIndex - index : index - lrcIndex;
-};
-
 // 歌词文本点击
 const lrcTextClick = (time) => {
-  emit("lrcTextClick", time);
+  emit("lrcTextClick", time / 1000); // 转换回秒
 };
 
-// 原生 DOM 的逐字歌词实现
-function renderLyricsTemplate(music, setting) {
-  clearInterval()
-  const lrcAllContainer = document.querySelector('.lrc-all');
-  
-  // Exit early if no lyrics data or container found
-  if (!music.getPlaySongLyric || !lrcAllContainer || !(music.getPlaySongLyric.hasYrc || setting.showYrc)) {
-    return; // Exit if no lyrics data or container found, or yrc should not be shown
+// 组件销毁时清理
+onUnmounted(() => {
+  if (lyricPlayer) {
+    lyricPlayer.dispose();
+    lyricPlayer = null;
   }
-
-  lrcAllContainer.querySelectorAll('.yrc').forEach((yrcDiv) => {
-    lrcAllContainer.removeChild(yrcDiv)
-  })
-
-  // Iterate through each lyric item
-  music.getPlaySongLyric
-  .yrc.forEach((item, index) => {
-    // Create a new div element for each lyric item
-    const lyricItem = document.createElement('div');
-    lyricItem.className = 'yrc';
-    lyricItem.id = `yrc${index}`;
-
-    // Add dynamic classes based on current playing state and settings
-    lyricItem.classList.toggle('on', music.getPlaySongLyricIndex === index);
-    lyricItem.classList.toggle('down', music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex === index - 1);
-    lyricItem.classList.toggle('up', music.getPlaySongLyricIndex !== 0 && music.getPlaySongLyricIndex === index + 1);
-    lyricItem.classList.toggle('blur', setting.lyricsBlur);
-
-    // Apply dynamic styles based on settings
-    lyricItem.style.marginBottom = `${setting.lyricsFontSize - 1.6}vh`;
-    lyricItem.style.transformOrigin = setting.lyricsPosition === 'center' ? 'center' : null;
-    lyricItem.style.filter = setting.lyricsBlur ? `blur(${getFilter(music.getPlaySongLyricIndex, index)}px)` : 'none';
-    lyricItem.style.alignItems = setting.lyricsPosition === 'center' ? 'center' : 'flex-start';
-
-    // Handle click event on lyric item
-    lyricItem.onclick = () => lrcTextClick(item.time);
-
-    // Create a div for the main lyric content
-    const lyricContent = document.createElement('div');
-    lyricContent.className = 'lyric';
-    lyricContent.style.fontSize = `${setting.lyricsFontSize}vh`;
-
-    // Iterate through each line of content in the lyric item
-    item.content.forEach((v, i) => {
-      // Create a div for each line of text
-      const textDiv = document.createElement('div');
-      textDiv.className = 'text';
-      textDiv.style.setProperty('--dur', `${Math.max(v.duration - 0.2, 0.1)}s`);
-
-      // Create spans for the main text and filler text
-      const textSpan1 = document.createElement('span');
-      textSpan1.className = 'word';
-      textSpan1.innerHTML = v.content.replace(/ /g, '&nbsp;');
-
-      const textSpan2 = document.createElement('span');
-      textSpan2.className = 'filler';
-      textSpan2.innerHTML = v.content.replace(/ /g, '&nbsp;');
-      textSpan2.setAttribute('data-updated', 'false');
-
-      // Add 'fill' class conditionally based on current playing time
-      if (music.getPlaySongLyricIndex === index && music.getPlaySongTime.currentTime + 0.2 >= v.time) {
-        textDiv.classList.add('fill');
-      }
-
-      // Apply transform style based on setting
-      textDiv.style.transform = setting.showYrcTransform ? 'translateY(-50%)' : 'none';
-
-      // Append spans to text div
-      textDiv.appendChild(textSpan1);
-      textDiv.appendChild(textSpan2);
-
-      // Append text div to main lyric content div
-      lyricContent.appendChild(textDiv);
-    });
-
-    // Append lyric content div to lyric item
-    lyricItem.appendChild(lyricContent);
-
-    // Append translation span if translation exists and setting is enabled
-    if (music.getPlaySongLyric.hasYrcTran && setting.showTransl && item.tran) {
-      const translationSpan = document.createElement('span');
-      translationSpan.className = 'lyric-fy';
-      translationSpan.style.fontSize = `${setting.lyricsFontSize - 1}vh`;
-      translationSpan.innerHTML = item.tran;
-      lyricItem.appendChild(translationSpan);
-    }
-
-    // Append romanization span if romanization exists and setting is enabled
-    if (music.getPlaySongLyric.hasYrcRoma && setting.showRoma && item.roma) {
-      const romanizationSpan = document.createElement('span');
-      romanizationSpan.className = 'lyric-roma';
-      romanizationSpan.style.fontSize = `${setting.lyricsFontSize - 1.5}vh`;
-      romanizationSpan.innerHTML = item.roma;
-      lyricItem.appendChild(romanizationSpan);
-    }
-
-    // Append the completed lyric item to the main container
-    lrcAllContainer.appendChild(lyricItem);
-  });
-}
-
-// 逐字歌词动态更新
-function updateLyricsDisplay(music) {
-  const currentIndex = music.getPlaySongLyricIndex;
-
-  const lyricItems = document.querySelectorAll('.yrc');
-
-  lyricItems.forEach((lyricItem, index) => {
-    const item = music.getPlaySongLyric.yrc[index];
-    const content = item.content;
-
-    // Update yrc container classes
-    lyricItem.classList.toggle('on', currentIndex === index);
-    lyricItem.classList.toggle('down', currentIndex !== 0 && currentIndex === index - 1);
-    lyricItem.classList.toggle('up', currentIndex !== 0 && currentIndex === index + 1);
-
-    content.forEach((v, i) => {
-      const textDiv = lyricItem.querySelectorAll('.text')[i];
-      const textSpan2 = lyricItem.querySelectorAll('.filler')[i];
-
-      // Check if filler text has been updated before
-      if (textSpan2.getAttribute('data-updated') === 'false') {
-        // Update filler text
-        textSpan2.innerHTML = v.content.replace(/ /g, '&nbsp;');
-        textSpan2.setAttribute('data-updated', 'true');
-      }
-
-      // Update filler text opacity based on current time
-      textSpan2.style.opacity = (music.getPlaySongTime.currentTime >= v.time && music.getPlaySongTime.currentTime <= v.time + v.duration) ? 1 : 0;
-
-      // Update 'fill' class for current playing line
-      textDiv.classList.toggle('fill', currentIndex === index && music.getPlaySongTime.currentTime + 0.2 >= v.time);
-
-      // Update filler text color based on yrc container 'on' class
-      textSpan2.style.color = lyricItem.classList.contains('on') ? 'white' : '';
-    });
-  });
-}
-
-const lyricsUpdateInterval = () => {
-  clearInterval()
-  setInterval(() => {
-    updateLyricsDisplay(music);
-  }, 0.1);
-}
-
-// DOM 挂载完成时加载歌词实现
-onMounted(() => {
-  setTimeout(renderLyricsTemplate(music, setting), 200)
-  lyricsUpdateInterval()
-  previousSongId = music.getPlaySongData.id;
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
 });
-
-onBeforeUpdate(() => {
-  setTimeout(renderLyricsTemplate(music, setting), 200)
-  lyricsUpdateInterval()
-  previousSongId = music.getPlaySongData.id;
-})
-
-onUpdated(() => {
-  renderLyricsTemplate(music, setting)
-  previousSongId = music.getPlaySongData.id;
-  lyricsUpdateInterval()
-})
-
-watch(
-  () => music.getPlaySongData.id,
-  () => renderLyricsTemplate(music, setting)
-)
-
 </script>
 
 <style lang="scss">
@@ -259,15 +369,13 @@ watch(
 
 @keyframes shine {
   0% {
-    opacity: 0.3;
+    text-shadow: 0 0 0.1em rgba(255, 255, 255, 0);
   }
-
   50% {
-    opacity: 1;
+    text-shadow: 0 0 0.5em rgba(255, 255, 255, 0.7);
   }
-
   100% {
-    opacity: 0.3;
+    text-shadow: 0 0 0.1em rgba(255, 255, 255, 0);
   }
 }
 
@@ -548,21 +656,69 @@ watch(
   0% {
     text-shadow: 0 0 0.1em rgba(255, 255, 255, 0);
   }
-
-  25% {
-    text-shadow: 0 0 0.3em rgba(255, 255, 255, 0.5);
-  }
-
   50% {
     text-shadow: 0 0 0.5em rgba(255, 255, 255, 0.7);
   }
-
-  75% {
-    text-shadow: 0 0 0.3em rgba(255, 255, 255, 0.5);
-  }
-
   100% {
     text-shadow: 0 0 0.1em rgba(255, 255, 255, 0);
   }
+}
+
+.lyric-line {
+  display: flex;
+  flex-direction: column;
+  align-items: inherit;
+  opacity: 0.3;
+  transform: scale(0.75);
+  transform-origin: left bottom;
+  transition: all 0.3s ease;
+  padding: 1.8vh 4vh 1.8vh 3vh;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &.active {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .text {
+    font-weight: bold;
+    display: flex;
+    flex-wrap: wrap;
+
+    .char {
+      display: inline-block;
+      opacity: 0.6;
+      transition: all 0.3s ease;
+      
+      &.active {
+        opacity: 1;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
+
+      &.transform {
+        &.active {
+          transform: translateY(-1.5px) scale(1.05);
+        }
+      }
+    }
+
+    .word-space {
+      display: inline-block;
+      width: 0.3em;
+    }
+  }
+
+  .translation, .romaji {
+    margin-top: 4px;
+    opacity: 0.6;
+  }
+}
+
+.char.active {
+  animation: shine var(--duration, 0.3s) ease-in-out;
 }
 </style>

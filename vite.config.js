@@ -5,6 +5,8 @@ import { VitePWA } from "vite-plugin-pwa";
 import vue from "@vitejs/plugin-vue";
 import viteCompression from "vite-plugin-compression";
 import AutoImport from "unplugin-auto-import/vite";
+import wasm from "vite-plugin-wasm";
+import topLevelAwait from "vite-plugin-top-level-await";
 import Components from "unplugin-vue-components/vite";
 
 // https://vitejs.dev/config/
@@ -12,6 +14,8 @@ export default ({ mode }) =>
   defineConfig({
     plugins: [
       vue(),
+      wasm(),
+      topLevelAwait(),
       AutoImport({
         imports: [
           "vue",

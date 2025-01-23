@@ -1,5 +1,4 @@
 import getLanguageData from "./getLanguageData";
-import { invoke } from '@tauri-apps/api';
 import { format } from 'date-fns';
 
 /**

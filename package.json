@@ -16,6 +16,7 @@
     "@icon-park/vue-next": "^1.4.2",
     "@ivanv/vue-collapse-transition": "^1.0.2",
     "@material/material-color-utilities": "^0.3.0",
+    "@types/vue": "^2.0.0",
     "artplayer": "^5.1.6",
     "axios": "^1.7.2",
     "colorthief": "^2.4.0",
@@ -32,7 +33,7 @@
     "throttle-debounce": "^5.0.2",
     "vite-plugin-top-level-await": "^1.4.4",
     "vite-plugin-wasm": "^3.4.1",
-    "vue": "^3.5.12",
+    "vue": "^3.5.13",
     "vue-i18n": "^9.13.1",
     "vue-router": "^4.4.0",
     "vue-slider-component": "4.1.0-beta.7"

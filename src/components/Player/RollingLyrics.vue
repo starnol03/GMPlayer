@@ -11,16 +11,17 @@
     
     <!-- 歌词容器 -->
     <div class="lyrics-container">
-      <LyricPlayer 
-        v-if="isLyricReady"
+      <LyricPlayer
         :lyric-lines="processedLyrics" 
         :enableBlur="setting.lyricsBlur"
         :enableScale="false"
-        :current-time="currentTimeRef" 
+        :playing="music.getPlayState"
+        :current-time="currentTimeRef | 0" 
         :line-click="e => {
-          if (music.getPlayState) lrcTextClick(e.line.getLine().startTime / 1000)
+          if (music.getPlayState) lrcTextClick(e.line.getLine().startTime)
         }"
-        :wordFadeWidth="1"
+        :wordFadeWidth="0.5"
+        ref="playerRef"
       />
     </div>
     
@@ -40,17 +41,18 @@ const currentTimeRef = ref(0);
 const isLyricReady = ref(false);
 const containerRef = ref(null);
 
+const playerRef = ref();
+
 // 初始化当前时间
 currentTimeRef.value = music.getPlaySongTime.currentTime;
 
 console.log('歌词数据', music.getPlaySongLyric);
 
-// 处理歌词数据
 const processLyricLine = (line, index, array) => {
-  const lineEndTime = array[index + 1] ? array[index + 1].time : array[index].time + line.endTime;
+  const nextLine = array[index + 1];
   return {
-    startTime: line.time ?? 0,
-    endTime: lineEndTime,
+    startTime: line.time,
+    endTime: nextLine ? nextLine.time : line.time + line.endTime,
     translatedLyric: setting.showTransl && line.tran ? line.tran : "",
     romanLyric: setting.showRoma && line.roma ? line.roma : "",
     isBG: false,
@@ -60,11 +62,13 @@ const processLyricLine = (line, index, array) => {
 
 const processWords = (content, lineEndTime) => {
   return content
-    .filter(char => char.content?.trim())
+    .filter(char => char.content)  // 只过滤掉content为空的情况
     .map((char, wordIndex, wordArray) => ({
-      word: char.content.trim(),
-      startTime: char.time ?? 0,
-      endTime: wordIndex === wordArray.length - 1 ? lineEndTime : (wordArray[wordIndex + 1]?.time ?? lineEndTime)
+      word: char.content,  // 保留原始内容，包括空格
+      startTime: char.time,
+      endTime: wordIndex === wordArray.length - 1 
+        ? lineEndTime  // 最后一个词使用行的结束时间
+        : wordArray[wordIndex + 1].time // 否则使用下一个词的开始时间
     }));
 };
 
@@ -77,8 +81,8 @@ const processedLyrics = computed(() => {
         const baseLine = processLyricLine(line, index, array);
         return {
           ...baseLine,
-          originalLyric: line.content.map(item => item.content.trim()),
-          words: processWords(line.content, baseLine.endTime),
+          originalLyric: line.content.map(item => item.content),
+          words: processWords(line.content, baseLine.endTime)
         };
       });
   } else {
@@ -88,16 +92,16 @@ const processedLyrics = computed(() => {
       .map((line, index, array) => {
         const baseLine = processLyricLine(line, index, array);
         const cleanContent = line.content
-          .filter(char => char.content?.trim())
+          .filter(char => char.content)
           .map(char => ({
             ...char,
-            content: char.content.trim()
+            content: char.content
           }));
 
         return {
           ...baseLine,
           originalLyric: cleanContent.map(char => char.content),
-          words: processWords(cleanContent, baseLine.endTime),
+          words: processWords(cleanContent, baseLine.endTime)
         };
       });
   }
@@ -116,53 +120,118 @@ watch(() => music.getPlaySongLyric, () => {
   isLyricReady.value = false;
   nextTick(() => {
     isLyricReady.value = true;
+    nextTick(() => {
+      if (playerRef.value?.lyricPlayer?.value) {
+        const player = playerRef.value.lyricPlayer.value;
+        // 设置弹簧参数，增加阻尼减少振动
+        player.setLinePosYSpringParams({
+          mass: 1,
+          stiffness: 170,
+          damping: 26,
+          velocity: 0
+        });
+
+        player.setAlignAnchor('center');
+        // 设置对齐位置
+        player.setAlignPosition(0.5);
+        // 设置歌词行
+        player.setLyricLines(processedLyrics.value);
+        // 设置当前时间
+        player.setCurrentTime(currentTimeRef.value);
+      }
+    });
   });
 }, { deep: true });
 
+// 更新歌词行
+const updateLyricLines = async () => {
+  if (!playerRef.value?.lyricPlayer?.value || !music.getPlayState) return;
+  
+  const player = playerRef.value.lyricPlayer.value;
+  // 设置弹簧参数
+  player.setLinePosYSpringParams({
+    mass: 1,
+    stiffness: 170,
+    damping: 26,
+    velocity: 0
+  });
+  // 设置对齐方式
+  player.setAlignAnchor('top');
+  player.setAlignPosition(0.5);
+  // 设置歌词行
+  player.setLyricLines(processedLyrics.value);
+  // 设置当前时间
+  player.setCurrentTime(currentTimeRef.value);
+};
+
+// 更新当前时间
+watch(
+  () => music.getPlaySongTime.currentTime, 
+  (newTime) => {
+    currentTimeRef.value = newTime;
+    const player = playerRef.value?.lyricPlayer?.value;
+    if (player && (player.getCurrentTime() !== newTime)) {
+      player.setCurrentTime(newTime);
+    }
+  }
+);
+
 // 添加监听器以确保DOM更新后再进行尺寸测量
 onMounted(() => {
-  nextTick(() => {
+  nextTick(async () => {
     isLyricReady.value = true;
+    await nextTick();
+    if (music.getPlayState) {
+      await updateLyricLines();
+    }
+
     if (containerRef.value) {
+      let updateTimeout;
       const observer = new ResizeObserver(() => {
+        // 清除之前的超时
+        if (updateTimeout) {
+          clearTimeout(updateTimeout);
+        }
+
         // 当容器大小变化时，重新计算歌词尺寸
-        if (music.getPlaySongLyric.lrc[0]) {
-          isLyricReady.value = false;
-          nextTick(() => {
-            isLyricReady.value = true;
-          });
+        if (music.getPlaySongLyric.lrc[0] && music.getPlayState) {
+          updateTimeout = setTimeout(async () => {
+            if (playerRef.value?.lyricPlayer?.value) {
+              // 等待DOM更新
+              await new Promise(r => requestAnimationFrame(r));
+              // 更新歌词
+              await updateLyricLines();
+            }
+          }, 100);
         }
       });
       observer.observe(containerRef.value);
+
+      // 清理函数
+      return () => {
+        if (updateTimeout) {
+          clearTimeout(updateTimeout);
+        }
+        observer.disconnect();
+      };
     }
   });
-});
-
-// 更新当前时间
-watch(() => music.getPlaySongTime.currentTime, (newTime) => {
-  currentTimeRef.value = newTime;
 });
 
 </script>
 
 <style lang="scss">
-
 .lrc-all {
   display: flex;
   flex-direction: column;
-  // margin-right: 20%;
   scroll-behavior: smooth;
   scrollbar-width: none;
   max-width: 52vh;
   overflow: auto;
   padding: 0 10px;
-  opacity: 1;
-  transform: translateZ(0) scale(1);
-  will-change: auto;
 
   &.loading {
     opacity: 0 !important;
-    transform: scale(0.8);
   }
 
   .placeholder {
@@ -180,118 +249,29 @@ watch(() => music.getPlaySongTime.currentTime, (newTime) => {
     }
   }
 
-  .amll-lyric-player {
-    will-change: filter, opacity, transform;
-    display: flex;
-    flex-direction: column;
+  .lyrics-container {
+    width: 100%;
+    flex: 1;
     position: relative;
-    padding: 1.8vh 4vh 1.8vh 3vh;
-    box-sizing: border-box;
-    border-radius: 8px;
-    opacity: 0.3;
-    transform: scale(0.75);
-    transform-origin: left bottom;
-    cursor: pointer;
-
-    .lyric-line {
+    
+    :deep(.amll-lyric-player) {
+      position: relative;
       display: flex;
       flex-direction: column;
-      align-items: inherit;
-      opacity: 0.3;
-      transform: scale(0.75);
-      transform-origin: left bottom;
-      transition: all 0.3s ease;
-      padding: 1.8vh 4vh 1.8vh 3vh;
-      cursor: pointer;
-
-      &:hover {
-        opacity: 0.8;
-      }
-
-      &.active {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      .text {
-        font-weight: bold;
+      min-height: 100px;
+      
+      .lyric-line {
+        position: relative;
         display: flex;
-        flex-wrap: wrap;
-
-        .char {
-          display: inline-block;
-          opacity: 0.6;
-          transition: all 0.3s ease;
-          
-          &.active {
-            opacity: 1;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-          }
-        }
-
-        .word-space {
-          display: inline-block;
-          width: 0.3em;
-        }
-      }
-
-      .translation, .romaji {
-        margin-top: 4px;
-        opacity: 0.6;
-      }
-    }
-
-    &:hover {
-      transform: scale(1.1);
-    }
-
-    &::before {
-      @media (min-width: 768px) {
-        content: "";
-        display: block;
-        position: absolute;
-        left: 0px;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        border-radius: 8px;
-        background-color: #ffffff20;
-        opacity: 0;
-        z-index: 0;
-        transform: scale(1.05);
-        transition: transform 0.3s ease, opacity 0.3s ease;
-        pointer-events: none;
-      }
-    }
-
-    &:hover {
-      opacity: 1;
-
-      &::before {
-        transform: scale(1);
-        opacity: 1;
-      }
-    }
-
-    &:active {
-      &::before {
-        transform: scale(0.95);
+        flex-direction: column;
+        min-height: 1em;
+        padding: 1.8vh 4vh 1.8vh 3vh;
       }
     }
   }
 
   &::-webkit-scrollbar {
     display: none;
-  }
-
-  &:hover {
-
-    .lrc,
-    .yrc {
-      &.blur {
-        filter: blur(0) !important;
-      }
-    }
   }
 
   &.cover {
@@ -346,67 +326,6 @@ watch(() => music.getPlaySongTime.currentTime, (newTime) => {
     height: 70vh;
     margin-right: 0;
     padding: 0;
-  }
-}
-
-@keyframes progress {
-  0% {
-    background-size: 0 100%;
-  }
-
-  100% {
-    background-size: 100% 100%;
-  }
-}
-
-@keyframes shine {
-  0% {
-    text-shadow: 0 0 0.1em rgba(255, 255, 255, 0);
-  }
-  50% {
-    text-shadow: 0 0 0.5em rgba(255, 255, 255, 0.7);
-  }
-  100% {
-    text-shadow: 0 0 0.1em rgba(255, 255, 255, 0);
-  }
-}
-
-@keyframes emp {
-  0% {
-    opacity: 0.5;
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-  }
-
-  50% {
-    opacity: 1;
-    text-shadow: 0 0 28px rgba(255, 255, 255, 0.9);
-  }
-
-  100% {
-    opacity: 0.5;
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-  }
-}
-
-@keyframes progress {
-  0% {
-    background-size: 0 100%;
-  }
-
-  100% {
-    background-size: 100% 100%;
-  }
-}
-
-@keyframes shine {
-  0% {
-    text-shadow: 0 0 0.1em rgba(255, 255, 255, 0);
-  }
-  50% {
-    text-shadow: 0 0 0.5em rgba(255, 255, 255, 0.7);
-  }
-  100% {
-    text-shadow: 0 0 0.1em rgba(255, 255, 255, 0);
   }
 }
 </style>

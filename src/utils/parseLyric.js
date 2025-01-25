@@ -1,9 +1,5 @@
 import { parseLrc as parseCoreLrc, parseYrc as parseCoreYrc } from "@applemusic-like-lyrics/lyric";
-
-export const msToTime = (milliseconds) => {
-  const dur = dayjs.duration(milliseconds, "milliseconds");
-  return milliseconds < 3600000 ? dur.format("mm:ss") : dur.format("H:mm:ss");
-};
+import { msToS, msToTime } from "./timeTools";
 
 
 // 恢复默认
@@ -142,7 +138,7 @@ const parseYrcData = (yrcData) => {
       const time = msToS(words[0].startTime);
       const endTime = msToS(words[words.length - 1].endTime);
 
-      const contents = words.map(word => ({
+      const content = words.map(word => ({
         time: msToS(word.startTime),
         endTime: msToS(word.endTime),
         duration: msToS(word.endTime - word.startTime),
@@ -150,7 +146,7 @@ const parseYrcData = (yrcData) => {
         endsWithSpace: word.word.endsWith(" ")
       }));
 
-      const contentStr = contents
+      const contentStr = content
         .map(word => word.content + (word.endsWithSpace ? " " : ""))
         .join("");
 
@@ -159,8 +155,8 @@ const parseYrcData = (yrcData) => {
       return {
         time,
         endTime,
-        content: contentStr,
-        contents
+        content,
+        TextContent: contentStr
       };
     })
     .filter(line => line !== null);

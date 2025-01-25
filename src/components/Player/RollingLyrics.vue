@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { musicStore, settingStore, siteStore } from "@/store";
 import { LyricPlayer } from "@applemusic-like-lyrics/vue";
 
@@ -38,6 +38,10 @@ const setting = settingStore();
 const site = siteStore();
 
 const lyricPlayerRef = ref(null);
+
+onMounted(() => {
+  console.log(music.getPlaySongLyric);
+});
 
 // 歌词主色
 const mainColor = computed(() => {

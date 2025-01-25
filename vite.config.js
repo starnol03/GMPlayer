@@ -15,7 +15,10 @@ export default ({ mode }) =>
     plugins: [
       vue(),
       wasm(),
-      topLevelAwait(),
+      topLevelAwait({
+        promiseExportName: '__tla',
+        promiseImportName: (i) => `__tla_${i}`,
+      }),
       AutoImport({
         imports: [
           "vue",

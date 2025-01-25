@@ -10,7 +10,8 @@
           playlist: music.showPlayList,
           search: site.searchInputActive,
         }">
-          <n-back-top :bottom="music.getPlaylists[0] && music.showPlayBar ? 100 : 40" style="transition: all 0.3s; z-index: 999" />
+          <n-back-top :bottom="music.getPlaylists[0] && music.showPlayBar ? 100 : 40"
+            style="transition: all 0.3s; z-index: 999" />
           <router-view v-slot="{ Component }">
             <keep-alive>
               <Transition name="scale" mode="out-in">
@@ -216,6 +217,32 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.titlebar {
+  height: 30px;
+  background: transparent;
+  user-select: none;
+  display: flex;
+  justify-content: flex-end;
+  position: fixed;
+  top: 0;
+  left: 3px;
+  right: 0;
+}
+
+.titlebar-button {
+  margin-top: -3px;
+  transform: translateX(5%);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 30px;
+  height: 20px;
+}
+
+.titlebar-button:hover {
+  background: #f32156;
+}
+
 .n-layout-header {
   height: 60px;
   display: flex;

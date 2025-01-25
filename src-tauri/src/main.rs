@@ -9,10 +9,20 @@ fn main() {
   tauri::Builder::default()
   .invoke_handler(tauri::generate_handler![
     get_chunk,
-    format_number
+    format_number,
+    detect_desktop
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
+}
+
+#[command]
+fn detect_desktop() -> bool {
+  #[cfg(target_os = "android")]
+  {
+    return false
+  }
+  return true;
 }
 
 #[command]

@@ -8,11 +8,22 @@
   },
   "package": {
     "productName": "GMPlayer",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "tauri": {
     "allowlist": {
-      "all": false
+      "all": false,
+      "window": {
+        "all": false,
+        "close": true,
+        "hide": true,
+        "show": true,
+        "maximize": true,
+        "minimize": true,
+        "unmaximize": true,
+        "unminimize": true,
+        "startDragging": true
+      }
     },
     "bundle": {
       "active": true,
@@ -54,6 +65,7 @@
       {
         "fullscreen": false,
         "height": 800,
+        "decorations": false,
         "resizable": true,
         "title": "GMPlayer",
         "width": 1200

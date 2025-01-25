@@ -142,12 +142,12 @@ const parseYrcData = (yrcData) => {
         time: msToS(word.startTime),
         endTime: msToS(word.endTime),
         duration: msToS(word.endTime - word.startTime),
-        content: word.word.trim(),
+        content: word.word.endsWith(" ") ? word.word : word.word.trim(),
         endsWithSpace: word.word.endsWith(" ")
       }));
 
       const contentStr = content
-        .map(word => word.content + (word.endsWithSpace ? " " : ""))
+        .map(word => word.content)
         .join("");
 
       if (!contentStr) return null;

@@ -1,81 +1,38 @@
 <template>
   <Transition>
-    <div :key="currentLyrics?.[0]?.startTime" :class="[
-      'lyric-am',
-      {
-        'lyric-left': setting.lyricsPosition === 'left',
-        'lyric-center': setting.lyricsPosition === 'center',
-        'loading': music.getLoadingState
-      }
-    ]">
-      <LyricPlayer ref="lyricPlayerRef" :lyricLines="currentLyrics" :currentTime="music.getPlaySongTime.currentTime * 1000"
-        :playing="music.getPlayState"
-        :alignAnchor="setting.lyricsBlock === 'center' ? 'center' : 'top'"
-        :alignPosition="setting.lyricsBlock === 'center' ? 0.5 : 0.2" :enableSpring="setting.showYrcAnimation"
-        :enableScale="setting.showYrcAnimation" :enableBlur="setting.lyricsBlur"
-        :enableInterludeDots="true"
-        :wordFadeWidth="0.5" :linePosXSpringParams="setting.springParams.posX"
-        :linePosYSpringParams="setting.springParams.posY" :lineScaleSpringParams="setting.springParams.scale" :style="{
-          '--amll-lyric-view-color': setting.immersivePlayer ? mainColor : 'rgb(239, 239, 239)',
-          '--amll-lyric-player-font-size': setting.lyricsFontSize * 10 + 'px',
-          '--amll-lyric-player-line-height': setting.lyricLineHeight,
-          'font-weight': setting.lyricFontWeight,
-          'font-family': setting.lyricFont,
-          'letter-spacing': setting.lyricLetterSpacing,
-          'cursor': 'pointer',
-          'user-select': 'none',
-          '-webkit-tap-highlight-color': 'transparent'
-        }" class="am-lyric" @line-click="(e) => {
-          lrcTextClick(e.line.getLine().startTime)
-        }" />
+    <div :key="currentLyrics?.[0]?.startTime" 
+         :class="lyricClasses">
+      <LyricPlayer class="am-lyric" />
     </div>
   </Transition>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue';
-import { musicStore, settingStore, siteStore } from "@/store";
-import { LyricPlayer } from "@applemusic-like-lyrics/vue";
+<script setup lang="ts">
+import { computed } from 'vue';
+import { musicStore, settingStore } from "../../store";
+import LyricPlayer from "../../libs/apple-music-like/LyricPlayer.vue";
+import { createLyricsProcessor } from "../../libs/apple-music-like/processLyrics";
 
 const music = musicStore();
 const setting = settingStore();
-const site = siteStore();
 
-const lyricPlayerRef = ref();
+// 计算歌词容器的类名
+const lyricClasses = computed(() => ({
+  'lyric-am': true,
+  'lyric-left': setting.lyricsPosition === 'left',
+  'lyric-center': setting.lyricsPosition === 'center',
+  'loading': music.isLoadingSong
+}));
 
-onMounted(() => {
-  console.log(music.getPlaySongLyric);
-});
-
-// 歌词主色
-const mainColor = computed(() => {
-  return site.songPicColor || 'rgb(239, 239, 239)';
-});
-
-// Get current lyrics based on settings
+// 获取当前歌词
 const currentLyrics = computed(() => {
   const songLyric = music.songLyric || { lrcAMData: [], yrcAMData: [] };
-  const lyrics = setting.showYrc && songLyric.yrcAMData?.length
-    ? songLyric.yrcAMData
-    : songLyric.lrcAMData || [];
-
-  // 处理音译和翻译的显示
-  return lyrics.map(line => ({
-    ...line,
-    romanLyric: setting.showRoma ? line.romanLyric : "",
-    translatedLyric: setting.showTransl ? line.translatedLyric : ""
-  }));
+  return createLyricsProcessor(songLyric, {
+    showYrc: setting.showYrc,
+    showRoma: setting.showRoma,
+    showTransl: setting.showTransl
+  })[0];
 });
-
-const emit = defineEmits(["lrcTextClick"]);
-
-// Handle line click
-const lrcTextClick = (time) => {
-  if (time != null) {
-    emit("lrcTextClick", time / 1000);
-    music.setPlayState(true);
-  }
-};
 </script>
 
 <style lang="scss" scoped>
